@@ -1,68 +1,92 @@
-const User = require('../models/User');
+const db = require("../library/database");
 
-// Contoh UserController
-const userController = {
-  // Mendapatkan semua pengguna
-  getAllUsers: async (req, res) => {
+const getAllUsers = (req, res) => {
+  const sql = "SELECT * FROM tbl_users";
+  db.query(sql, (err, rows) => {
     try {
-      const users = await User.find();
-      res.json(users);
+      // hasil dari mysql
+      res.json({
+        payload: rows,
+        message: "Success GET data",
+      });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      res.status(500).json({
+        message: "Internal Server Error",
+        serverMessage: error,
+      });
     }
-  },
-
-  // Membuat pengguna baru
-  createUser: async (req, res) => {
-    const newUser = new User(req.body);
-    try {
-      const savedUser = await newUser.save();
-      res.status(201).json(savedUser);
-    } catch (error) {
-      res.status(400).json({ message: error.message });
-    }
-  },
-
-  // Mendapatkan detail pengguna berdasarkan ID
-  getUserById: async (req, res) => {
-    try {
-      const user = await User.findById(req.params.id);
-      if (user) {
-        res.json(user);
-      } else {
-        res.status(404).json({ message: 'User not found' });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  },
-
-  // Mengupdate informasi pengguna
-  updateUser: async (req, res) => {
-    try {
-      const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (updatedUser) {
-        res.json(updatedUser);
-      } else {
-        res.status(404).json({ message: 'User not found' });
-      }
-    } catch (error) {
-      res.status(400).json({ message: error.message });
-    }
-  },
-
-  deleteUser: async (req, res) => {
-    try {
-      const deletedUser = await User.findByIdAndDelete(req.params.id);
-      if (deletedUser) {
-        res.json({ message: 'User deleted successfully' });
-      } else {
-        res.status(404).json({ message: 'User not found' });
-      }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  }
+  });
 };
 
-module.exports = userController;
+const createNewUser = (req, res) => {
+  const { username, email, password, photo } = req.body;
+
+  const sql = `INSERT INTO tbl_users (username, email, password, photo) VALUES ('${username}', '${email}', '${password}', '${photo}')`;
+
+  db.query(sql, (err, fields) => {
+    if (err) throw err;
+    if (fields?.affectedRows) {
+      const data = {
+        isSuccess: fields.affectedRows,
+        id: fields.insertId,
+      };
+      res.json({
+        payload: data,
+        message: "Success Added Data",
+      });
+    }
+  });
+};
+
+const updateUser = (req, res) => {
+  const { username, email, password, photo } = req.body;
+
+  const sql = `UPDATE tbl_users SET username = '${username}', email = '${email}', password = '${password}', photo = '${photo}' WHERE email = '${email}'`;
+
+  db.query(sql, (err, fields) => {
+    if (err) throw err;
+    if (fields?.affectedRows) {
+      const data = {
+        isSuccess: fields.affectedRows,
+        message: fields.message,
+      };
+      res.json({
+        payload: data,
+        message: "Success Update Data",
+      });
+    } else {
+      res.status(500).json({
+        message: "Cant Update Data",
+      });
+    }
+  });
+};
+
+const deleteUser = (req, res) => {
+  const { email } = req.body;
+  const sql = `DELETE FROM tbl_users WHERE email = '${email}'`;
+  db.query(sql, (err, fields) => {
+    if (err) throw err;
+    if (fields?.affectedRows) {
+      const data = {
+        isSuccess: fields.affectedRows,
+        message: fields.message,
+      };
+      res.json({
+        payload: data,
+        message: "Success Delete Data",
+      });
+    } else {
+      res.status(404).json({
+        message: "User Not Found",
+      });
+    }
+  });
+};
+
+module.exports = {
+  getAllUsers,
+  createNewUser,
+  updateUser,
+  deleteUser,
+};
