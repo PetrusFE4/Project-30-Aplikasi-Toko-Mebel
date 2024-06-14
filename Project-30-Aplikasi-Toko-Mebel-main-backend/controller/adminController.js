@@ -17,6 +17,29 @@ const getAllAdmin = (req, res) => {
   });
 };
 
+const getSingleAdmin = (req, res) => {
+  const { id } = req.params; // Assuming the product ID is passed as a URL parameter
+  const sql = `SELECT * FROM tbl_admins WHERE id_admin = '${id}'`;
+  db.query(sql, (err, rows) => {
+    if (err) {
+      res.status(500).json({
+        message: "Error retrieving Admin",
+      });
+    } else {
+      if (rows.length > 0) {
+        res.json({
+          payload: rows[0],
+          message: "Success Get Single Admin!",
+        });
+      } else {
+        res.status(404).json({
+          message: "Admin not found",
+        });
+      }
+    }
+  });
+};
+
 // Create new admin
 const createNewAdmin = (req, res) => {
   const { name, email, password, role, photo } = req.body;
@@ -87,6 +110,7 @@ const deleteAdmin = (req, res) => {
 
 module.exports = {
   getAllAdmin,
+  getSingleAdmin,
   createNewAdmin,
   updateAdmin,
   deleteAdmin,

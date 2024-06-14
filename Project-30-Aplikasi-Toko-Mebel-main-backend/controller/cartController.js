@@ -11,13 +11,16 @@ const addToCart = async (req, res) => {
             return res.status(404).json({ message: 'Produk tidak ditemukan' });
         }
 
-        await db.query(
-            `INSERT INTO tbl_carts (id_user, id_product, quantity) 
-             VALUES (?, ?, ?) 
-             ON DUPLICATE KEY UPDATE quantity = quantity + ?`,
-            [id_user, id_product, quantity, quantity]
-        );
+        // Tambahkan atau update item di keranjang
+        const sql = `
+            INSERT INTO tbl_carts (id_user, id_product, quantity) 
+            VALUES (?, ?, ?) 
+            ON DUPLICATE KEY UPDATE quantity = quantity + ?
+        `;
+        const params = [id_user, id_product, quantity, quantity];
+        await db.query(sql, params);
 
+        // Ambil data keranjang yang sudah diperbarui
         const [updatedCart] = await db.query(
             `SELECT c.*, p.name, p.price 
              FROM tbl_carts c 
@@ -32,6 +35,7 @@ const addToCart = async (req, res) => {
         res.status(500).send('Server error');
     }
 };
+
 
 const getCart = async (req, res) => {
     try {
@@ -54,6 +58,29 @@ const getCart = async (req, res) => {
         res.status(500).send('Server error');
     }
 };
+
+const getSingleCart = (req, res) => {
+    const { id } = req.params; // Assuming the product ID is passed as a URL parameter
+    const sql = `SELECT * FROM tbl_carts WHERE id_cart = '${id}'`;
+    db.query(sql, (err, rows) => {
+      if (err) {
+        res.status(500).json({
+          message: "Error retrieving cart",
+        });
+      } else {
+        if (rows.length > 0) {
+          res.json({
+            payload: rows[0],
+            message: "Success Get Single Cart!",
+          });
+        } else {
+          res.status(404).json({
+            message: "Cart not found",
+          });
+        }
+      }
+    });
+  };
 
 const updateCart = async (req, res) => {
     try {
@@ -127,7 +154,8 @@ const deleteCartItem = async (req, res) => {
 module.exports = {
     addToCart,
     getCart,
+    getSingleCart,
     updateCart,
     deleteCart,
-    deleteCartItem // Tambahkan ini untuk penghapusan item spesifik
+    deleteCartItem 
 };

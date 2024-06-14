@@ -4,6 +4,7 @@ const adminController = require('../controller/adminController')
 
 
 router.get('/', adminController.getAllAdmin)
+router.get('/:id', adminController.getSingleAdmin); 
 
 router.post('/add', adminController.createNewAdmin)
 

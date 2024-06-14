@@ -5,8 +5,31 @@ const getAllProduct = (req, res) => {
   db.query(sql, (err, rows) => {
     res.json({
       payload: rows,
-      message: "Success Show All Product !",
+      message: "Success Show All Product!",
     });
+  });
+};
+
+const getSingleProduct = (req, res) => {
+  const { id } = req.params; // Assuming the product ID is passed as a URL parameter
+  const sql = `SELECT * FROM tbl_products WHERE id_product = '${id}'`;
+  db.query(sql, (err, rows) => {
+    if (err) {
+      res.status(500).json({
+        message: "Error retrieving product",
+      });
+    } else {
+      if (rows.length > 0) {
+        res.json({
+          payload: rows[0],
+          message: "Success Get Single Product!",
+        });
+      } else {
+        res.status(404).json({
+          message: "Product not found",
+        });
+      }
+    }
   });
 };
 
@@ -22,7 +45,7 @@ const addNewProduct = (req, res) => {
       };
       res.json({
         payload: data,
-        message: "Product added !",
+        message: "Product added!",
       });
     }
   });
@@ -44,7 +67,7 @@ const updateProduct = (req, res) => {
       });
     } else {
       res.status(500).json({
-        message: "Cant Update Data",
+        message: "Can't Update Data",
       });
     }
   });
@@ -66,7 +89,7 @@ const deleteProduct = (req, res) => {
       });
     } else {
       res.status(500).json({
-        message: "Cant Delete Data",
+        message: "Can't Delete Data",
       });
     }
   });
@@ -74,6 +97,7 @@ const deleteProduct = (req, res) => {
 
 module.exports = {
   getAllProduct,
+  getSingleProduct,
   addNewProduct,
   updateProduct,
   deleteProduct,
