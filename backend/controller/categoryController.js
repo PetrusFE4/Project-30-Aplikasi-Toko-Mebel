@@ -1,68 +1,78 @@
 const db = require("../library/database");
 
-const getAllCategory = (req, res) => {
-  const sql = "SELECT * FROM tbl_categorys";
-  db.query(sql, (err, rows) => {
+const getAllCategory = async (req, res) => {
+  try {
+    const sql = "SELECT * FROM tbl_categorys";
+    const rows = await db.query(sql);
     res.json({
       payload: rows,
       message: "Success Show All Category!",
     });
-  });
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err,
+    });
+  }
 };
 
-const getSingleCategory = (req, res) => {
-  const { id } = req.params; // Assuming the product ID is passed as a URL parameter
-  const sql = `SELECT * FROM tbl_categorys WHERE id_category = '${id}'`;
-  db.query(sql, (err, rows) => {
-    if (err) {
-      res.status(500).json({
-        message: "Error retrieving category",
+const getSingleCategory = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const sql = `SELECT * FROM tbl_categorys WHERE id_category = ?`;
+    const rows = await db.query(sql, [id]);
+    if (rows.length > 0) {
+      res.json({
+        payload: rows[0],
+        message: "Success Get Single Category!",
       });
     } else {
-      if (rows.length > 0) {
-        res.json({
-          payload: rows[0],
-          message: "Success Get Single Category!",
-        });
-      } else {
-        res.status(404).json({
-          message: "Category not found",
-        });
-      }
-    }
-  });
-};
-
-const addNewCategory = (req, res) => {
-  const { category_name, photo } = req.body;
-  const sql = `INSERT INTO tbl_categorys (category_name, categorys, photo) VALUES ('${category_name}', '${categorys}', '${photo}')`;
-  db.query(sql, (err, fields) => {
-    if (err) throw err;
-    if (fields?.affectedRows) {
-      const data = {
-        isSuccess: fields.affectedRows,
-        id: fields.insertId,
-      };
-      res.json({
-        payload: data,
-        message: "Category added!",
+      res.status(404).json({
+        message: "Category not found",
       });
     }
-  });
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err,
+    });
+  }
 };
 
-const updateCategory = (req, res) => {
+const addNewCategory = async (req, res) => {
   const { category_name, photo } = req.body;
-  const sql = `UPDATE tbl_categorys SET category_name = '${category_name}', categorys = '${categorys}', photo = '${photo}' WHERE category_name = '${category_name}'`;
-  db.query(sql, (err, fields) => {
-    if (err) throw err;
-    if (fields?.affectedRows) {
-      const data = {
-        isSuccess: fields.affectedRows,
-        message: fields.message,
-      };
+  try {
+    const sql = `INSERT INTO tbl_categorys (category_name, photo) VALUES (?, ?)`;
+    const result = await db.query(sql, [category_name, photo]);
+    res.json({
+      payload: {
+        isSuccess: result.affectedRows,
+        id: result.insertId,
+      },
+      message: "Category added!",
+    });
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err,
+    });
+  }
+};
+
+const updateCategory = async (req, res) => {
+  const { category_name, photo } = req.body;
+  try {
+    const sql = `UPDATE tbl_categorys SET category_name = ?, photo = ? WHERE category_name = ?`;
+    const result = await db.query(sql, [category_name, photo, category_name]);
+    if (result.affectedRows > 0) {
       res.json({
-        payload: data,
+        payload: {
+          isSuccess: result.affectedRows,
+          message: result.message,
+        },
         message: "Success Update Data",
       });
     } else {
@@ -70,21 +80,26 @@ const updateCategory = (req, res) => {
         message: "Can't Update Data",
       });
     }
-  });
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err,
+    });
+  }
 };
 
-const deleteCategory = (req, res) => {
+const deleteCategory = async (req, res) => {
   const { id_category } = req.body;
-  const sql = `DELETE FROM tbl_category WHERE id_category = '${id_category}'`;
-  db.query(sql, (err, fields) => {
-    if (err) throw err;
-    if (fields?.affectedRows) {
-      const data = {
-        isSuccess: fields.affectedRows,
-        message: fields.message,
-      };
+  try {
+    const sql = `DELETE FROM tbl_categorys WHERE id_category = ?`;
+    const result = await db.query(sql, [id_category]);
+    if (result.affectedRows > 0) {
       res.json({
-        payload: data,
+        payload: {
+          isSuccess: result.affectedRows,
+          message: result.message,
+        },
         message: "Success Delete Data",
       });
     } else {
@@ -92,7 +107,13 @@ const deleteCategory = (req, res) => {
         message: "Can't Delete Data",
       });
     }
-  });
+  } catch (err) {
+    console.error('Error executing query:', err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err,
+    });
+  }
 };
 
 module.exports = {

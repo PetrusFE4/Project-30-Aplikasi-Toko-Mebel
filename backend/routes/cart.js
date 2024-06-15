@@ -1,18 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const cartController = require('../controller/cartController');
-const userController = require('../controller/userController');
-const verifyToken = require('../middleware/verifyToken');
+const authMiddleware = require('../middleware/auth');
+const authRole = require('../middleware/authRole');
 
-router.post('/login', userController.login);
-router.use(verifyToken);
-router.post('/add', cartController.addToCart);
-router.get('/', cartController.getCart);
-router.get('/:id', cartController.getSingleCart); 
-router.put('/update', verifyToken, cartController.updateCart);
-router.delete('/delete', verifyToken, cartController.deleteCart);
+// Gunakan middleware auth untuk memeriksa keaslian token
+router.use(authMiddleware);
 
-// Tambahkan rute untuk menghapus item spesifik dari keranjang
-router.delete('/delete-item', verifyToken, cartController.deleteCartItem);
+// Rute-rute yang membutuhkan role pengguna tertentu untuk akses
+router.post('/add', authRole('user'), cartController.addToCart);
+router.get('/', authRole('user'), cartController.getCart);
+router.get('/:id_cart', authRole('user'), cartController.getSingleCart);
+router.put('/:id_cart', authRole('user'), cartController.updateCart);
+router.delete('/', authRole('user'), cartController.deleteCart);
+router.delete('/:id_cart', authRole('user'), cartController.deleteCartItem);
 
 module.exports = router;

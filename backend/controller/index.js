@@ -1,8 +1,6 @@
 const admin = require('./adminController');
 const user = require('./userController');
 const home = require('./homeController');
-const register = require('./registerController');
-const login = require('./loginController');
 const profile = require('./profileController');
 const product = require('./productController');
 const cart = require('./cartController');
@@ -15,8 +13,6 @@ const product_rating = require('./product_ratingController');
 module.exports ={
 	user,
 	admin,
-    register,
-    login,
 	home,
 	profile,
     cart,

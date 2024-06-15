@@ -1,8 +1,8 @@
 const db = require("../library/database");
 
-// Get all admins
-const getAllAdmin = (req, res) => {
-  const sql = "SELECT * FROM tbl_admins";
+// Get all users
+const getAllUsers = (req, res) => {
+  const sql = "SELECT id_user, username, role FROM tbl_users WHERE role = 'admin'";
   db.query(sql, (err, rows) => {
     if (err) {
       return res.status(500).json({
@@ -17,35 +17,41 @@ const getAllAdmin = (req, res) => {
   });
 };
 
-const getSingleAdmin = (req, res) => {
-  const { id } = req.params; // Assuming the product ID is passed as a URL parameter
-  const sql = `SELECT * FROM tbl_admins WHERE id_admin = '${id}'`;
+const getSingleUser = (req, res) => {
+  const { id } = req.params; // Assuming the user ID is passed as a URL parameter
+  const sql = `SELECT id_user, username, role FROM tbl_users WHERE id_user = '${id}' AND role = 'admin'`;
   db.query(sql, (err, rows) => {
     if (err) {
       res.status(500).json({
-        message: "Error retrieving Admin",
+        message: "Error retrieving User",
       });
     } else {
       if (rows.length > 0) {
         res.json({
           payload: rows[0],
-          message: "Success Get Single Admin!",
+          message: "Success Get Single User!",
         });
       } else {
         res.status(404).json({
-          message: "Admin not found",
+          message: "User not found",
         });
       }
     }
   });
 };
 
-// Create new admin
-const createNewAdmin = (req, res) => {
-  const { name, email, password, role, photo } = req.body;
+// Create new user
+const createNewUser = (req, res) => {
+  const { username, password, role } = req.body;
 
-  const sql = `INSERT INTO tbl_admins (name, email, password, role, photo) VALUES (?, ?, ?, ?, ?)`;
-  db.query(sql, [name, email, password, role, photo], (err, result) => {
+  if (role !== 'admin') {
+    return res.status(403).json({
+      message: "Forbidden. Only admin can be created.",
+    });
+  }
+
+  const sql = `INSERT INTO tbl_users (username, password, role) VALUES (?, ?, ?)`;
+  db.query(sql, [username, password, role], (err, result) => {
     if (err) {
       return res.status(500).json({
         message: "Internal Server Error",
@@ -53,18 +59,24 @@ const createNewAdmin = (req, res) => {
       });
     }
     res.json({
-      payload: { id: result.insertId, isSuccess: result.affectedRows },
+      payload: { id_user: result.insertId, isSuccess: result.affectedRows },
       message: "Success Added Data",
     });
   });
 };
 
-// Update admin
-const updateAdmin = (req, res) => {
-  const { name, email, password, role, photo } = req.body;
+// Update user
+const updateUser = (req, res) => {
+  const { id_user, username, password, role } = req.body;
 
-  const sql = `UPDATE tbl_admins SET name = ?, password = ?, role = ?, photo = ? WHERE email = ?`;
-  db.query(sql, [name, password, role, photo, email], (err, result) => {
+  if (role !== 'admin') {
+    return res.status(403).json({
+      message: "Forbidden. Only admin can be updated.",
+    });
+  }
+
+  const sql = `UPDATE tbl_users SET username = ?, password = ?, role = ? WHERE id_user = ?`;
+  db.query(sql, [username, password, role, id_user], (err, result) => {
     if (err) {
       return res.status(500).json({
         message: "Internal Server Error",
@@ -78,17 +90,17 @@ const updateAdmin = (req, res) => {
       });
     } else {
       res.status(404).json({
-        message: "Admin Not Found",
+        message: "User Not Found",
       });
     }
   });
 };
 
-// Delete admin
-const deleteAdmin = (req, res) => {
-  const { email } = req.body;
-  const sql = `DELETE FROM tbl_admins WHERE email = ?`;
-  db.query(sql, [email], (err, result) => {
+// Delete user
+const deleteUser = (req, res) => {
+  const { id_user } = req.body;
+  const sql = `DELETE FROM tbl_users WHERE id_user = ?`;
+  db.query(sql, [id_user], (err, result) => {
     if (err) {
       return res.status(500).json({
         message: "Internal Server Error",
@@ -102,16 +114,16 @@ const deleteAdmin = (req, res) => {
       });
     } else {
       res.status(404).json({
-        message: "Admin Not Found",
+        message: "User Not Found",
       });
     }
   });
 };
 
 module.exports = {
-  getAllAdmin,
-  getSingleAdmin,
-  createNewAdmin,
-  updateAdmin,
-  deleteAdmin,
+  getAllUsers,
+  getSingleUser,
+  createNewUser,
+  updateUser,
+  deleteUser,
 };
