@@ -3,7 +3,9 @@ const db = require("../library/database");
 const addToCart = async (req, res) => {
   try {
     const { id_product, quantity } = req.body;
-    const id_user = req.user.id;
+    const id_user = req.user.id_user; // Pastikan menggunakan req.user.id_user dari middleware verifyToken
+
+    console.log('Adding to cart for user:', id_user); // Pastikan id_user tidak null
 
     // Cek apakah produk ada
     const [product] = await db.query("SELECT * FROM tbl_products WHERE id_product = ?", [id_product]);
@@ -13,35 +15,37 @@ const addToCart = async (req, res) => {
 
     // Tambahkan atau update item di keranjang
     const sql = `
-        INSERT INTO tbl_carts (id_user, id_product, quantity) 
-        VALUES (?, ?, ?) 
-        ON DUPLICATE KEY UPDATE quantity = quantity + ?
+      INSERT INTO tbl_carts (id_user, id_product, quantity) 
+      VALUES (?, ?, ?) 
+      ON DUPLICATE KEY UPDATE quantity = quantity + ?
     `;
     const params = [id_user, id_product, quantity, quantity];
     await db.query(sql, params);
 
     // Ambil data keranjang yang sudah diperbarui
     const [updatedCart] = await db.query(
-      `SELECT c.*, p.name, p.price 
-         FROM tbl_carts c 
-         JOIN tbl_products p ON c.id_product = p.id_product 
-         WHERE c.id_user = ?`,
+      `SELECT c.*, p.product_name, p.price 
+       FROM tbl_carts c 
+       JOIN tbl_products p ON c.id_product = p.id_product 
+       WHERE c.id_user = ?`,
       [id_user]
     );
 
     res.status(200).json(updatedCart);
   } catch (error) {
-    console.error(error.message);
+    console.error('Error adding to cart:', error.message);
     res.status(500).send('Server error');
   }
 };
 
+
+
 const getCart = async (req, res) => {
-  const id_user = req.user.id;
+  const id_user = req.user.id_user;
 
   try {
     const sql = `
-        SELECT c.*, p.name, p.price 
+        SELECT c.*, p.product_name, p.price 
         FROM tbl_carts c 
         JOIN tbl_products p ON c.id_product = p.id_product 
         WHERE c.id_user = ?
@@ -50,18 +54,18 @@ const getCart = async (req, res) => {
 
     res.status(200).json(cartItems);
   } catch (error) {
-    console.error(error.message);
+    console.error('Error fetching cart:', error.message);
     res.status(500).send('Server error');
   }
 };
 
 const getSingleCart = async (req, res) => {
   const { id_cart } = req.params;
-  const id_user = req.user.id;
+  const id_user = req.user.id_user;
 
   try {
     const sql = `
-        SELECT c.*, p.name, p.price 
+        SELECT c.*, p.product_name, p.price 
         FROM tbl_carts c 
         JOIN tbl_products p ON c.id_product = p.id_product 
         WHERE c.id_user = ? AND c.id_cart = ?
@@ -74,7 +78,7 @@ const getSingleCart = async (req, res) => {
 
     res.status(200).json(cartItem);
   } catch (error) {
-    console.error(error.message);
+    console.error('Error fetching single cart item:', error.message);
     res.status(500).send('Server error');
   }
 };
@@ -82,7 +86,7 @@ const getSingleCart = async (req, res) => {
 const updateCart = async (req, res) => {
   const { id_cart } = req.params;
   const { quantity } = req.body;
-  const id_user = req.user.id;
+  const id_user = req.user.id_user;
 
   try {
     // Pastikan item keranjang ada sebelum diupdate
@@ -101,7 +105,7 @@ const updateCart = async (req, res) => {
 
     // Ambil data keranjang yang sudah diperbarui
     const [updatedCartItem] = await db.query(
-      `SELECT c.*, p.name, p.price 
+      `SELECT c.*, p.product_name, p.price 
          FROM tbl_carts c 
          JOIN tbl_products p ON c.id_product = p.id_product 
          WHERE c.id_user = ? AND c.id_cart = ?`,
@@ -110,13 +114,13 @@ const updateCart = async (req, res) => {
 
     res.status(200).json(updatedCartItem);
   } catch (error) {
-    console.error(error.message);
+    console.error('Error updating cart item:', error.message);
     res.status(500).send('Server error');
   }
 };
 
 const deleteCart = async (req, res) => {
-  const id_user = req.user.id;
+  const id_user = req.user.id_user;
 
   try {
     // Hapus semua item keranjang pengguna
@@ -125,14 +129,14 @@ const deleteCart = async (req, res) => {
 
     res.status(200).json({ message: 'Keranjang berhasil dihapus' });
   } catch (error) {
-    console.error(error.message);
+    console.error('Error deleting cart:', error.message);
     res.status(500).send('Server error');
   }
 };
 
 const deleteCartItem = async (req, res) => {
   const { id_cart } = req.params;
-  const id_user = req.user.id;
+  const id_user = req.user.id_user;
 
   try {
     // Pastikan item keranjang ada sebelum dihapus
@@ -151,7 +155,7 @@ const deleteCartItem = async (req, res) => {
 
     res.status(200).json({ message: 'Item keranjang berhasil dihapus' });
   } catch (error) {
-    console.error(error.message);
+    console.error('Error deleting cart item:', error.message);
     res.status(500).send('Server error');
   }
 };

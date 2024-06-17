@@ -3,15 +3,15 @@ const dotenv = require('dotenv');
 dotenv.config();
 const bcrypt = require('bcrypt');
 const db = require('../library/database');
-const secretKey = process.env.JWT_SECRET|| 'sdasduqwdqwbdjkasdbui3bqwiubwqkdj12343rknfbcadkfbienidnain2131rwefrt5t5wfsdf';
 
-// Function to generate JWT token
+const secretKey = process.env.JWT_SECRET; // Pastikan ini benar
+
 const generateToken = (user) => {
-    const token = jwt.sign({ id_user: user.id_user, name: user.name }, secretKey, { expiresIn: '1h' });
-    return token;
+  const token = jwt.sign({ id_user: user.id_user, name: user.name }, secretKey, { expiresIn: '1h' });
+  return token;
 };
 
-
+// Function to generate JWT token
 const login = async (req, res) => {
   const { name, password } = req.body;
   console.log(`Login attempt with name: ${name}`);
@@ -57,8 +57,6 @@ const login = async (req, res) => {
       });
   }
 };
-
-
 
 // Function for register
 const register = async (req, res) => {

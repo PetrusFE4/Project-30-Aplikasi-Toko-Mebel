@@ -11,6 +11,7 @@ var usersRouter = require('./routes/users');
 var cartRouter = require('./routes/cart');
 var productRouter = require('./routes/product');
 var categoryRouter = require('./routes/category');
+var profileRouter = require('./routes/profile');
 
 var app = express();
 
@@ -25,5 +26,6 @@ app.use('/users', usersRouter);
 app.use('/cart', cartRouter);
 app.use('/products', productRouter);
 app.use('/category', categoryRouter);
+app.use('/profile', profileRouter);
 
 module.exports = app;

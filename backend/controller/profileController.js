@@ -1,31 +1,42 @@
-const config = require('../library/database');
+const db = require('../library/database');
 
-let mysql      = require('mysql');
-let pool       = mysql.createPool(config);
+const getProfile = async (req, res) => {
+  const id_user = req.user.id;
 
-pool.on('error',(err)=> {
-    console.error(err);
-});
+  try {
+    const [results] = await db.execute('SELECT id_user, name, email FROM tbl_users WHERE id_user = ?', [id_user]);
 
-module.exports ={
-    profile(req,res){
-        let id = req.session.userid
-        pool.getConnection(function(err, connection) {
-            if (err) throw err;
-            connection.query(
-                `
-                SELECT * FROM user where user_id = '${id}';
-                `
-            , function (error, results) {
-                if(error) throw error;
-                res.render("profile",{
-                    url: 'http://localhost:3000/',
-                    userName: req.session.username,
-                    nama: results[0]['username'],
-                    email: results[0]['email']
-                });
-            });
-            connection.release();
-        })
+    if (results.length === 0) {
+      return res.status(404).json({ msg: 'Profil tidak ditemukan' });
     }
-}
+
+    const user = results[0];
+    res.json(user);
+  } catch (error) {
+    console.error('Error querying database:', error.stack);
+    res.status(500).send('Server Error');
+  }
+};
+
+const updateProfile = async (req, res) => {
+  const { name, email } = req.body;
+  const id_user = req.user.id;
+
+  try {
+    const [results] = await db.execute('UPDATE tbl_users SET name = ?, email = ? WHERE id_user = ?', [name, email, id_user]);
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ msg: 'Profil tidak ditemukan' });
+    }
+
+    res.json({ msg: 'Profil berhasil diperbarui' });
+  } catch (error) {
+    console.error('Error querying database:', error.stack);
+    res.status(500).send('Server Error');
+  }
+};
+
+module.exports = {
+  getProfile,
+  updateProfile
+};
