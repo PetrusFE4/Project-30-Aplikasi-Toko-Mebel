@@ -1,10 +1,11 @@
-const jwt = require('jsonwebtoken');
-const dotenv = require('dotenv');
+const jwt = require("jsonwebtoken");
+const dotenv = require("dotenv");
 dotenv.config();
-const bcrypt = require('bcrypt');
-const db = require('../library/database');
+const bcrypt = require("bcrypt");
+const db = require("../library/database");
 
-const secretKey = process.env.JWT_SECRET; // Pastikan ini benar
+const secretKey =
+  process.env.JWT_SECRET ; // Pastikan ini benar
 
 const generateToken = (user) => {
   const token = jwt.sign({ id_user: user.id_user, username: user.name }, secretKey, { expiresIn: '1h' });
@@ -68,31 +69,30 @@ const register = async (req, res) => {
           message: "Registration successful",
       });
   } catch (err) {
-      console.error('Error executing query:', err);
-      res.status(500).json({
-          message: "Internal Server Error",
-          serverMessage: err,
-      });
+    console.error("Error executing query:", err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err,
+    });
   }
 };
 
-
 // Function to get all users
 const getAllUsers = async (req, res) => {
-    const sql = "SELECT * FROM tbl_users";
-    try {
-        const [rows, fields] = await db.query(sql);
-        res.json({
-            payload: rows,
-            message: "Success GET data",
-        });
-    } catch (err) {
-        console.error('Error executing query:', err);
-        res.status(500).json({
-            message: "Internal Server Error",
-            serverMessage: err,
-        });
-    }
+  const sql = "SELECT * FROM tbl_users";
+  try {
+    const [rows, fields] = await db.query(sql);
+    res.json({
+      payload: rows,
+      message: "Success GET data",
+    });
+  } catch (err) {
+    console.error("Error executing query:", err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err,
+    });
+  }
 };
 
 // Function to get a single user by ID
