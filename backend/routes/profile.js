@@ -1,15 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controller/userController');
-const auth = require('../middleware/auth'); // Update import ke auth
+const profileController = require('../controller/profileController');
+const authMiddleware = require('../middleware/auth');
 
-// Gunakan middleware auth untuk memeriksa keaslian token
-router.use(auth);
+router.use(authMiddleware);
+// Rute untuk mendapatkan profil pengguna
+router.get('/',  profileController.getProfile);
 
-// Rute pengguna
-router.get('/', userController.getAllUsers);
-router.get('/:id', userController.getSingleUser);
-router.post('/register', userController.register);
-router.post('/login', userController.login);
+// Rute untuk memperbarui profil pengguna
+router.put('/edit', profileController.updateProfile);
 
 module.exports = router;

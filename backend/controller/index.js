@@ -6,9 +6,9 @@ const product = require('./productController');
 const cart = require('./cartController');
 const category = require('./categoryController');
 const order = require('./orderController');
-const order_item = require('./order_itemController');
-const product_comment = require('./product_commentController');
-const product_rating = require('./product_ratingController');
+const comment_product = require('./comment_productController');
+const rating_product = require('./rating_productController');
+const transaction_history = require('./transaction_historyController');
 
 module.exports ={
 	user,
@@ -19,7 +19,7 @@ module.exports ={
     category,
     product,
     order,
-    order_item,
-    product_comment,
-    product_rating
+    comment_product,
+    rating_product,
+    transaction_history
 };

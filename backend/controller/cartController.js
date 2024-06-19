@@ -38,26 +38,31 @@ const addToCart = async (req, res) => {
   }
 };
 
-
-
 const getCart = async (req, res) => {
   const id_user = req.user.id_user;
 
   try {
-    const sql = `
-        SELECT c.*, p.product_name, p.price 
-        FROM tbl_carts c 
-        JOIN tbl_products p ON c.id_product = p.id_product 
-        WHERE c.id_user = ?
-    `;
-    const [cartItems] = await db.query(sql, [id_user]);
+      const sql = `
+          SELECT c.*, p.product_name, p.price 
+          FROM tbl_carts c 
+          JOIN tbl_products p ON c.id_product = p.id_product 
+          WHERE c.id_user = ?
+      `;
+      const [cartItems] = await db.query(sql, [id_user]);
 
-    res.status(200).json(cartItems);
+      if (cartItems.length === 0) {
+          return res.status(404).json({
+              message: "Cart is empty for this user",
+          });
+      }
+
+      res.status(200).json(cartItems);
   } catch (error) {
-    console.error('Error fetching cart:', error.message);
-    res.status(500).send('Server error');
+      console.error('Error fetching cart:', error.message);
+      res.status(500).send('Server error');
   }
 };
+
 
 const getSingleCart = async (req, res) => {
   const { id_cart } = req.params;

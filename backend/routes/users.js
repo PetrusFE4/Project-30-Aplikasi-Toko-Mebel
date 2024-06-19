@@ -8,11 +8,6 @@ router.post('/register', userController.register);
 router.get('/', userController.getAllUsers)
 
 router.get('/:id', userController.getSingleUser); 
-// CREATE - USER
-router.post('/add', userController.createNewUser)
 
-router.put('/edit', userController.updateUser)
-
-router.delete('/delete', userController.deleteUser)
 
 module.exports = router

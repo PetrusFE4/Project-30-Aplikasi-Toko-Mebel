@@ -8,10 +8,14 @@ dotenv.config();
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var adminRouter = require('./routes/admin');
 var cartRouter = require('./routes/cart');
 var productRouter = require('./routes/product');
 var categoryRouter = require('./routes/category');
 var profileRouter = require('./routes/profile');
+var comment_productRouter = require('./routes/comment_product');
+var rating_productRouter = require('./routes/rating_product');
+var transaction_historyRouter = require('./routes/transaction_history');
 
 var app = express();
 
@@ -23,9 +27,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/admin', adminRouter);
 app.use('/cart', cartRouter);
 app.use('/products', productRouter);
 app.use('/category', categoryRouter);
 app.use('/profile', profileRouter);
+app.use('/comment_product', comment_productRouter);
+app.use('/rating_product', rating_productRouter);
+app.use('/transaction_history', transaction_historyRouter);
 
 module.exports = app;
