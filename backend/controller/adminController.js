@@ -1,6 +1,7 @@
 const db = require("../library/database");
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
 // Multer configuration
 const storage = multer.diskStorage({
@@ -160,90 +161,82 @@ const createProduct = async (req, res) => {
 
 // Update product
 const updateProduct = async (req, res) => {
-    // Fungsi upload single file menggunakan multer
-    const uploadSingle = upload.single('image');
+    const { id_product, product_name, description, price, stock, id_category } =
+      req.body;
+    let image = req.file.originalname
   
-    // Lakukan upload file dan proses update product
-    uploadSingle(req, res, async function (err) {
-      if (err instanceof multer.MulterError) {
-        // Handle error dari multer
-        return res.status(500).json({ message: 'Multer error', serverMessage: err });
-      } else if (err) {
-        // Handle error lainnya
-        return res.status(500).json({ message: 'File upload error', serverMessage: err });
-      }
-  
-      const { id_product, product_name, description, price, stock, id_category } = req.body;
-      let image = req.file ? `/uploads/${req.file.filename}` : undefined;
-  
-      try {
-        // Dapatkan detail produk yang akan diperbarui dari database
-        const [fetchResult] = await db.query(
-          'SELECT * FROM tbl_products WHERE id_product = ?',
-          [id_product]
-        );
-  
-        if (!fetchResult.length) {
-          return res.status(404).json({
-            message: 'Product Not Found',
-          });
-        }
-  
-        // Ambil nilai yang ada jika tidak ada perubahan di request body
-        const newName =
-          product_name !== undefined ? product_name : fetchResult[0].product_name;
-        const newDesc =
-          description !== undefined ? description : fetchResult[0].description;
-        const newPrice = price !== undefined ? price : fetchResult[0].price;
-        const newStock = stock !== undefined ? stock : fetchResult[0].stock;
-  
-        // Jika tidak ada file yang diunggah, gunakan image yang ada di database
-        if (!req.file) {
-          image = fetchResult[0].image;
-        } else {
-          // Hapus gambar lama jika ada
-          const oldImagePath = path.join(__dirname, '..', fetchResult[0].image);
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-          }
-        }
-  
-        // Query untuk melakukan update
-        const updateSql = `UPDATE tbl_products SET product_name = ?, description = ?, price = ?, stock = ?, image = ?, id_category = ? WHERE id_product = ?`;
-        const [result] = await db.query(updateSql, [
-          newName,
-          newDesc,
-          newPrice,
-          newStock,
-          image,
-          id_category,
-          id_product,
-        ]);
-  
-        if (result.affectedRows) {
-          // Kirim respons JSON jika berhasil melakukan update
-          res.json({
-            payload: { isSuccess: result.affectedRows },
-            message: 'Success Update Product',
-          });
-        } else {
-          // Kirim respons JSON jika produk tidak ditemukan
-          res.status(404).json({
-            message: 'Product Not Found',
-          });
-        }
-      } catch (err) {
-        console.error(err);
-        // Kirim respons JSON jika terjadi kesalahan server
-        res.status(500).json({
-          message: 'Internal Server Error',
-          serverMessage: err,
+    try {
+      // Validasi data input
+      if (!id_product) {
+        return res.status(400).json({
+          message: "Please provide id_product",
         });
       }
-    });
-  };
   
-
+      // Dapatkan detail produk yang akan diperbarui dari database
+      const [fetchResult] = await db.query(
+        "SELECT * FROM tbl_products WHERE id_product = ?",
+        [id_product]
+      );
+  
+      if (!fetchResult.length) {
+        return res.status(404).json({
+          message: "Product Not Found",
+        });
+      }
+  
+      // Ambil nilai yang ada jika tidak ada perubahan di request body
+      const newName =
+        product_name !== undefined ? product_name : fetchResult[0].product_name;
+      const newDesc =
+        description !== undefined ? description : fetchResult[0].description;
+      const newPrice = price !== undefined ? price : fetchResult[0].price;
+      const newStock = stock !== undefined ? stock : fetchResult[0].stock;
+  
+      // Jika tidak ada file yang diunggah, gunakan image yang ada di database
+      if (!req.file) {
+        image = fetchResult[0].image;
+      } else {
+        // Hapus gambar lama jika ada
+        const oldImagePath = path.join(__dirname, "..", fetchResult[0].image);
+        if (fs.existsSync(oldImagePath)) {
+          fs.unlinkSync(oldImagePath);
+        }
+      }
+  
+      // Query untuk melakukan update
+      const updateSql = 'UPDATE tbl_products SET product_name = ?, description = ?, price = ?, stock = ?, image = ?, id_category = ? WHERE id_product = ?';
+      const [result] = await db.query(updateSql, [
+        newName !== undefined ? newName : fetchResult[0].product_name,
+        newDesc !== undefined ? newDesc : fetchResult[0].description,
+        newPrice !== undefined ? newPrice : fetchResult[0].price,
+        newStock !== undefined ? newStock : fetchResult[0].stock,
+        image !== undefined ? image : fetchResult[0].image,
+        id_category !== undefined ? id_category : fetchResult[0].id_category,
+        id_product,
+      ]);
+  
+      if (result.affectedRows) {
+        // Kirim respons JSON jika berhasil melakukan update
+        res.json({
+          payload: { isSuccess: result.affectedRows },
+          message: "Success Update Product",
+        });
+      } else {
+        // Kirim respons JSON jika produk tidak ditemukan
+        res.status(404).json({
+          message: "Product Not Found",
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      // Kirim respons JSON jika terjadi kesalahan server
+      res.status(500).json({
+        message: "Internal Server Error",
+        serverMessage: err.message,
+      });
+    }
+  };
 
 // Get All category
 const getAllCategories = async (req, res) => {
@@ -314,61 +307,83 @@ const createCategory = async (req, res) => {
 
 // Update category
 const updateCategory = async (req, res) => {
-  upload.single("image")(req, res, async function (err) {
-    if (err) {
-      return res
-        .status(500)
-        .json({ message: "File upload error", serverMessage: err });
-    }
+  const { id_category, category_name, categorys } = req.body;
+  let image = req.file.originalname;
 
-    const { id_category, category_name, categorys } = req.body;
-    const image = req.file ? req.file.filename : undefined;
-
-    // Fetch existing category details first
-    const fetchSql = `SELECT * FROM tbl_categorys WHERE id_category = ?`;
-    try {
-      const [fetchResult] = await db.query(fetchSql, [id_category]);
-      if (!fetchResult.length) {
-        return res.status(404).json({
-          message: "Category Not Found",
-        });
-      }
-
-      // Use existing value if category_name is not provided in request body
-      const newName =
-        category_name !== undefined
-          ? category_name
-          : fetchResult[0].category_name;
-      const newCategorys =
-        categorys !== undefined ? categorys : fetchResult[0].categorys;
-      const newPhoto = image !== undefined ? image : fetchResult[0].image;
-
-      const updateSql = `UPDATE tbl_categorys SET category_name = ?, categorys = ?, image = ? WHERE id_category = ?`;
-      const [result] = await db.query(updateSql, [
-        newName,
-        newCategorys,
-        newPhoto,
-        id_category,
-      ]);
-
-      if (result.affectedRows) {
-        res.json({
-          payload: { isSuccess: result.affectedRows },
-          message: "Success Update Category",
-        });
-      } else {
-        res.status(404).json({
-          message: "Category Not Found",
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({
-        message: "Internal Server Error",
-        serverMessage: err,
+  try {
+    // Validasi data input
+    if (!id_category) {
+      return res.status(400).json({
+        message: "Please provide id_category",
       });
     }
-  });
+
+    // Dapatkan detail category yang akan diperbarui dari database
+    const [fetchResult] = await db.query(
+      "SELECT * FROM tbl_categorys WHERE id_category = ?",
+      [id_category]
+    );
+
+    if (!fetchResult.length) {
+      return res.status(404).json({
+        message: "Category Not Found",
+      });
+    }
+
+    // Ambil nilai yang ada jika tidak ada perubahan di request body
+    const newName =
+      category_name !== undefined
+        ? category_name
+        : fetchResult[0].category_name;
+    const newCategorys =
+      categorys !== undefined ? categorys : fetchResult[0].categorys;
+
+    // Jika tidak ada file yang diunggah, gunakan image yang ada di database
+    if (!req.file) {
+      image = fetchResult[0].image;
+    } else {
+      // Hapus gambar lama jika ada
+      const oldImagePath = path.join(
+        __dirname,
+        "..",
+        "image",
+        fetchResult[0].image
+      );
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+
+    // Query untuk melakukan update
+    const updateSql =
+      "UPDATE tbl_categorys SET category_name = ?, categorys = ?, image = ? WHERE id_category = ?";
+    const [result] = await db.query(updateSql, [
+      newName !== undefined ? newName : fetchResult[0].category_name,
+      newCategorys !== undefined ? newCategorys : fetchResult[0].categorys,
+      image !== undefined ? image : fetchResult[0].image,
+      id_category,
+    ]);
+
+    if (result.affectedRows) {
+      // Kirim respons JSON jika berhasil melakukan update
+      res.json({
+        payload: { isSuccess: result.affectedRows },
+        message: "Success Update Category",
+      });
+    } else {
+      // Kirim respons JSON jika kategori tidak ditemukan
+      res.status(404).json({
+        message: "Category Not Found",
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    // Kirim respons JSON jika terjadi kesalahan server
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err.message,
+    });
+  }
 };
 
 // Delete product
