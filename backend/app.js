@@ -1,24 +1,42 @@
-var express = require("express");
-var path = require("path");
-var cookieParser = require("cookie-parser");
-var logger = require("morgan");
-var dotenv = require("dotenv");
+const express = require("express");
+const path = require("path");
+const fs = require('fs');
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
+const dotenv = require("dotenv");
 const cors = require("cors");
+const multer = require("multer");
 dotenv.config();
 
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var adminRouter = require('./routes/admin');
-var cartRouter = require('./routes/cart');
-var productRouter = require('./routes/product');
-var categoryRouter = require('./routes/category');
-var profileRouter = require('./routes/profile');
-var comment_productRouter = require('./routes/comment_product');
-var rating_productRouter = require('./routes/rating_product');
-var transaction_historyRouter = require('./routes/transaction_history');
+const usersRouter = require("./routes/users");
+const adminRouter = require("./routes/admin");
+const cartRouter = require("./routes/cart");
+const productRouter = require("./routes/product");
+const categoryRouter = require("./routes/category");
+const profileRouter = require("./routes/profile");
+const orderRouter = require("./routes/order");
+const comment_productRouter = require("./routes/comment_product");
+const rating_productRouter = require("./routes/rating_product");
+const transaction_historyRouter = require("./routes/transaction_history");
 
-var app = express();
+const app = express();
+
+const uploadDir = path.join(__dirname, 'image');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, uploadDir); // Specify your upload directory
+    },
+    filename: function (req, file, cb) {
+        cb(null, Date.now() + path.extname(file.originalname)); // Rename file to avoid conflicts
+    }
+});
+
+const upload = multer({ storage: storage });
 
 app.use(logger("dev"));
 app.use(express.json());
@@ -27,15 +45,16 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/admin', adminRouter);
-app.use('/cart', cartRouter);
-app.use('/products', productRouter);
-app.use('/category', categoryRouter);
-app.use('/profile', profileRouter);
-app.use('/comment_product', comment_productRouter);
-app.use('/rating_product', rating_productRouter);
-app.use('/transaction_history', transaction_historyRouter);
+
+app.use("/users", usersRouter);
+app.use("/admin", adminRouter);
+app.use("/cart", cartRouter);
+app.use("/products", productRouter);
+app.use("/category", categoryRouter);
+app.use("/profile", profileRouter);
+app.use("/order", orderRouter);
+app.use("/comment_product", comment_productRouter);
+app.use("/rating_product", rating_productRouter);
+app.use("/transaction_history", transaction_historyRouter);
 
 module.exports = app;

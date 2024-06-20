@@ -124,5 +124,4 @@ module.exports = {
     register,
     getAllUsers,
     getSingleUser,
-
 };
