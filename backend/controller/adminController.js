@@ -99,56 +99,63 @@ const getAllProducts = async (req, res) => {
     });
   }
 };
-
-// Create product
 const createProduct = async (req, res) => {
-    const uploadSingle = upload.single("image");
+  try {
+    const { product_name, description, price, stock, id_category } = req.body;
+    let image = ''; // Default to empty string
 
-    uploadSingle(req, res, async function (err) {
-        if (err instanceof multer.MulterError) {
-            return res.status(500).json({ message: "Multer error", serverMessage: err });
-        } else if (err) {
-            return res.status(500).json({ message: "File upload error", serverMessage: err });
-        }
+    if (req.file) {
+      // Jika ada file yang diunggah
+      const ext = path.extname(req.file.originalname); // Ambil ekstensi file dari originalname
+      image = `/image/${req.file.filename}${ext}`; // Store the relative path with extension
+    } else {
+      // Jika tidak ada file yang diunggah
+      image = '/image/default.jpg'; // Atau gunakan nilai default
+    }
 
-        const { product_name, description, price, stock, id_category } = req.body;
-        const image = req.file ? req.file.filename : null;
+    console.log("Parsed request data:", { product_name, description, price, stock, id_category, image });
 
-        try {
-            const sql = `INSERT INTO tbl_products (product_name, description, price, stock, image, id_category) VALUES (?, ?, ?, ?, ?, ?)`;
-            const values = [product_name, description, price, stock, image, id_category];
+    // Pastikan req.file tidak kosong
+    if (!req.file) {
+      throw new Error('No file uploaded');
+    }
 
-            const [result] = await db.query(sql, values);
+    const sql = `INSERT INTO tbl_products (product_name, description, price, stock, image, id_category) VALUES (?, ?, ?, ?, ?, ?)`;
+    const values = [product_name, description, price, stock, image, id_category];
 
-            res.json({
-                payload: {
-                    isSuccess: result.affectedRows > 0,
-                    id: result.insertId,
-                },
-                message: "Product added!",
-            });
-        } catch (err) {
-            console.error("Error executing query:", err);
-            res.status(500).json({
-                message: "Internal Server Error",
-                serverMessage: err,
-            });
-        }
+    const [result] = await db.query(sql, values);
+
+    console.log("Database insert successful:", result);
+
+    res.json({
+      payload: {
+        isSuccess: result.affectedRows > 0,
+        id: result.insertId,
+      },
+      message: "Product added!",
     });
+  } catch (err) {
+    console.error("Error executing query:", err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err.message,
+    });
+  }
 };
 
 
 // Update product
 const updateProduct = async (req, res) => {
-  upload.single("image")(req, res, async function (err) {
-    if (err) {
-      return res
-        .status(500)
-        .json({ message: "File upload error", serverMessage: err });
+  const uploadSingle = upload.single("image");
+
+  uploadSingle(req, res, async function (err) {
+    if (err instanceof multer.MulterError) {
+      return res.status(500).json({ message: "Multer error", serverMessage: err });
+    } else if (err) {
+      return res.status(500).json({ message: "File upload error", serverMessage: err });
     }
 
-    const { id_product, product_name, description, price, stock, id_category } =
-      req.body;
+    const { id_product, product_name, description, price, stock, id_category } = req.body;
     const image = req.file ? req.file.filename : undefined;
 
     // Fetch existing product details first
@@ -168,7 +175,7 @@ const updateProduct = async (req, res) => {
         description !== undefined ? description : fetchResult[0].description;
       const newPrice = price !== undefined ? price : fetchResult[0].price;
       const newStock = stock !== undefined ? stock : fetchResult[0].stock;
-      const newPhotos = image !== undefined ? image : fetchResult[0].image;
+      const newImage = image !== undefined ? image : fetchResult[0].image;
       const newId_category =
         id_category !== undefined ? id_category : fetchResult[0].id_category;
 
@@ -178,7 +185,7 @@ const updateProduct = async (req, res) => {
         newDesc,
         newPrice,
         newStock,
-        newPhotos,
+        newImage,
         newId_category,
         id_product,
       ]);

@@ -8,7 +8,6 @@ const cors = require("cors");
 const multer = require("multer");
 dotenv.config();
 
-<<<<<<< HEAD
 
 const usersRouter = require("./routes/users");
 const adminRouter = require("./routes/admin");
@@ -20,33 +19,22 @@ const orderRouter = require("./routes/order");
 const comment_productRouter = require("./routes/comment_product");
 const rating_productRouter = require("./routes/rating_product");
 const transaction_historyRouter = require("./routes/transaction_history");
-=======
-var usersRouter = require('./routes/users');
-var adminRouter = require('./routes/admin');
-var cartRouter = require('./routes/cart');
-var productRouter = require('./routes/product');
-var categoryRouter = require('./routes/category');
-var profileRouter = require('./routes/profile');
-var comment_productRouter = require('./routes/comment_product');
-var rating_productRouter = require('./routes/rating_product');
-var transaction_historyRouter = require('./routes/transaction_history');
-var orderRouter = require('./routes/order');
->>>>>>> 276e9b1c735b5b045f891aabd723160d42dbf90e
 
 const app = express();
 
-const uploadDir = path.join(__dirname, 'image');
+const uploadDir = "image";
 if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
+  fs.mkdirSync(uploadDir);
 }
 
+// Multer configuration
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir); // Specify your upload directory
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname)); // Rename file to avoid conflicts
-    }
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
 });
 
 const upload = multer({ storage: storage });
@@ -57,8 +45,8 @@ app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/image", express.static(path.join(__dirname, "image")));
 
-<<<<<<< HEAD
 
 app.use("/users", usersRouter);
 app.use("/admin", adminRouter);
@@ -70,17 +58,5 @@ app.use("/order", orderRouter);
 app.use("/comment_product", comment_productRouter);
 app.use("/rating_product", rating_productRouter);
 app.use("/transaction_history", transaction_historyRouter);
-=======
-app.use('/users', usersRouter);
-app.use('/admin', adminRouter);
-app.use('/cart', cartRouter);
-app.use('/products', productRouter);
-app.use('/category', categoryRouter);
-app.use('/profile', profileRouter);
-app.use('/comment_product', comment_productRouter);
-app.use('/rating_product', rating_productRouter);
-app.use('/transaction_history', transaction_historyRouter);
-app.use('/order', orderRouter);
->>>>>>> 276e9b1c735b5b045f891aabd723160d42dbf90e
 
 module.exports = app;
