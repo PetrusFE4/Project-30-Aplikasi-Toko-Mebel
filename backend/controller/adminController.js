@@ -190,7 +190,7 @@ const deleteProduct = async (req, res) => {
 
 // Get all categories
 const getAllCategories = async (req, res) => {
-    const sql = "SELECT id_category, category_name FROM tbl_categorys";
+    const sql = "SELECT id_category, category_name, photo FROM tbl_categorys";
     try {
         const [rows] = await db.query(sql);
         res.json({
