@@ -99,29 +99,44 @@ const getAllProducts = async (req, res) => {
     });
   }
 };
+
 const createProduct = async (req, res) => {
   try {
     const { product_name, description, price, stock, id_category } = req.body;
-    let image = ''; // Default to empty string
+    let image = req.file; // Default to empty string
 
     if (req.file) {
       // Jika ada file yang diunggah
-      const ext = path.extname(req.file.originalname); // Ambil ekstensi file dari originalname
-      image = `/image/${req.file.filename}${ext}`; // Store the relative path with extension
+      image = `/image/${req.file.filename}`; // Store the relative path with extension
     } else {
+      const ext = path.extname(req.file.originalname); // Ambil ekstensi file dari originalname
       // Jika tidak ada file yang diunggah
-      image = '/image/default.jpg'; // Atau gunakan nilai default
+      image = `/image/default${ext}`; // Atau gunakan nilai default
     }
 
-    console.log("Parsed request data:", { product_name, description, price, stock, id_category, image });
+    console.log("Parsed request data:", {
+      product_name,
+      description,
+      price,
+      stock,
+      id_category,
+      image,
+    });
 
     // Pastikan req.file tidak kosong
     if (!req.file) {
-      throw new Error('No file uploaded');
+      throw new Error("No file uploaded");
     }
 
     const sql = `INSERT INTO tbl_products (product_name, description, price, stock, image, id_category) VALUES (?, ?, ?, ?, ?, ?)`;
-    const values = [product_name, description, price, stock, image, id_category];
+    const values = [
+      product_name,
+      description,
+      price,
+      stock,
+      image,
+      id_category,
+    ];
 
     const [result] = await db.query(sql, values);
 
@@ -143,72 +158,92 @@ const createProduct = async (req, res) => {
   }
 };
 
-
 // Update product
 const updateProduct = async (req, res) => {
-  const uploadSingle = upload.single("image");
-
-  uploadSingle(req, res, async function (err) {
-    if (err instanceof multer.MulterError) {
-      return res.status(500).json({ message: "Multer error", serverMessage: err });
-    } else if (err) {
-      return res.status(500).json({ message: "File upload error", serverMessage: err });
-    }
-
-    const { id_product, product_name, description, price, stock, id_category } = req.body;
-    const image = req.file ? req.file.filename : undefined;
-
-    // Fetch existing product details first
-    const fetchSql = `SELECT * FROM tbl_products WHERE id_product = ?`;
-    try {
-      const [fetchResult] = await db.query(fetchSql, [id_product]);
-      if (!fetchResult.length) {
-        return res.status(404).json({
-          message: "Product Not Found",
+    // Fungsi upload single file menggunakan multer
+    const uploadSingle = upload.single('image');
+  
+    // Lakukan upload file dan proses update product
+    uploadSingle(req, res, async function (err) {
+      if (err instanceof multer.MulterError) {
+        // Handle error dari multer
+        return res.status(500).json({ message: 'Multer error', serverMessage: err });
+      } else if (err) {
+        // Handle error lainnya
+        return res.status(500).json({ message: 'File upload error', serverMessage: err });
+      }
+  
+      const { id_product, product_name, description, price, stock, id_category } = req.body;
+      let image = req.file ? `/uploads/${req.file.filename}` : undefined;
+  
+      try {
+        // Dapatkan detail produk yang akan diperbarui dari database
+        const [fetchResult] = await db.query(
+          'SELECT * FROM tbl_products WHERE id_product = ?',
+          [id_product]
+        );
+  
+        if (!fetchResult.length) {
+          return res.status(404).json({
+            message: 'Product Not Found',
+          });
+        }
+  
+        // Ambil nilai yang ada jika tidak ada perubahan di request body
+        const newName =
+          product_name !== undefined ? product_name : fetchResult[0].product_name;
+        const newDesc =
+          description !== undefined ? description : fetchResult[0].description;
+        const newPrice = price !== undefined ? price : fetchResult[0].price;
+        const newStock = stock !== undefined ? stock : fetchResult[0].stock;
+  
+        // Jika tidak ada file yang diunggah, gunakan image yang ada di database
+        if (!req.file) {
+          image = fetchResult[0].image;
+        } else {
+          // Hapus gambar lama jika ada
+          const oldImagePath = path.join(__dirname, '..', fetchResult[0].image);
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlinkSync(oldImagePath);
+          }
+        }
+  
+        // Query untuk melakukan update
+        const updateSql = `UPDATE tbl_products SET product_name = ?, description = ?, price = ?, stock = ?, image = ?, id_category = ? WHERE id_product = ?`;
+        const [result] = await db.query(updateSql, [
+          newName,
+          newDesc,
+          newPrice,
+          newStock,
+          image,
+          id_category,
+          id_product,
+        ]);
+  
+        if (result.affectedRows) {
+          // Kirim respons JSON jika berhasil melakukan update
+          res.json({
+            payload: { isSuccess: result.affectedRows },
+            message: 'Success Update Product',
+          });
+        } else {
+          // Kirim respons JSON jika produk tidak ditemukan
+          res.status(404).json({
+            message: 'Product Not Found',
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        // Kirim respons JSON jika terjadi kesalahan server
+        res.status(500).json({
+          message: 'Internal Server Error',
+          serverMessage: err,
         });
       }
+    });
+  };
+  
 
-      // Assign existing values if not provided in request body
-      const newName =
-        product_name !== undefined ? product_name : fetchResult[0].product_name;
-      const newDesc =
-        description !== undefined ? description : fetchResult[0].description;
-      const newPrice = price !== undefined ? price : fetchResult[0].price;
-      const newStock = stock !== undefined ? stock : fetchResult[0].stock;
-      const newImage = image !== undefined ? image : fetchResult[0].image;
-      const newId_category =
-        id_category !== undefined ? id_category : fetchResult[0].id_category;
-
-      const updateSql = `UPDATE tbl_products SET product_name = ?, description = ?, price = ?, stock = ?, image = ?, id_category = ? WHERE id_product = ?`;
-      const [result] = await db.query(updateSql, [
-        newName,
-        newDesc,
-        newPrice,
-        newStock,
-        newImage,
-        newId_category,
-        id_product,
-      ]);
-
-      if (result.affectedRows) {
-        res.json({
-          payload: { isSuccess: result.affectedRows },
-          message: "Success Update Product",
-        });
-      } else {
-        res.status(404).json({
-          message: "Product Not Found",
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({
-        message: "Internal Server Error",
-        serverMessage: err,
-      });
-    }
-  });
-};
 
 // Get All category
 const getAllCategories = async (req, res) => {
@@ -230,34 +265,51 @@ const getAllCategories = async (req, res) => {
 
 // Create category
 const createCategory = async (req, res) => {
-  upload.single("image")(req, res, async function (err) {
-    if (err) {
-      return res
-        .status(500)
-        .json({ message: "File upload error", serverMessage: err });
-    }
-
+  try {
     const { category_name, categorys } = req.body;
-    const image = req.file.filename;
+    let image = req.file; // Default to empty string
 
-    try {
-      const sql = `INSERT INTO tbl_categorys (category_name, categorys, image) VALUES (?, ?, ?)`;
-      const [result] = await db.query(sql, [category_name, categorys, image]);
-      res.json({
-        payload: {
-          isSuccess: result.affectedRows,
-          id: result.insertId,
-        },
-        message: "Category added!",
-      });
-    } catch (err) {
-      console.error("Error executing query:", err);
-      res.status(500).json({
-        message: "Internal Server Error",
-        serverMessage: err,
-      });
+    if (req.file) {
+      // Jika ada file yang diunggah
+      image = `/image/${req.file.filename}`; // Store the relative path with extension
+    } else {
+      const ext = path.extname(req.file.originalname); // Ambil ekstensi file dari originalname
+      // Jika tidak ada file yang diunggah
+      image = `/image/default${ext}`; // Atau gunakan nilai default
     }
-  });
+
+    console.log("Parsed request data:", {
+      category_name,
+      categorys,
+      image,
+    });
+
+    // Pastikan req.file tidak kosong
+    if (!req.file) {
+      throw new Error("No file uploaded");
+    }
+
+    const sql = `INSERT INTO tbl_categorys (category_name, categorys, image) VALUES (?, ?, ?)`;
+    const values = [category_name, categorys, image];
+
+    const [result] = await db.query(sql, values);
+
+    console.log("Database insert successful:", result);
+
+    res.json({
+      payload: {
+        isSuccess: result.affectedRows > 0,
+        id: result.insertId,
+      },
+      message: "Category added!",
+    });
+  } catch (err) {
+    console.error("Error executing query:", err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err.message,
+    });
+  }
 };
 
 // Update category
