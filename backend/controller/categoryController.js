@@ -3,9 +3,9 @@ const db = require("../library/database");
 const getAllCategory = async (req, res) => {
   try {
     const sql = "SELECT * FROM tbl_categorys";
-    const rows = await db.query(sql);
+    const result = await db.query(sql);
     res.json({
-      payload: rows,
+      payload: result,
       message: "Success Show All Category!",
     });
   } catch (err) {

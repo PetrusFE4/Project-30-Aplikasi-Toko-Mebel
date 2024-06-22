@@ -85,7 +85,7 @@ const updateUserRole = async (req, res) => {
 // Get all products
 const getAllProducts = async (req, res) => {
   const sql =
-    "SELECT id_product, product_name, description, price, stock, photos FROM tbl_products";
+    "SELECT id_product, product_name, description, price, stock, image FROM tbl_products";
   try {
     const [rows] = await db.query(sql);
     res.json({
@@ -161,82 +161,83 @@ const createProduct = async (req, res) => {
 
 // Update product
 const updateProduct = async (req, res) => {
-    const { id_product, product_name, description, price, stock, id_category } =
-      req.body;
-    let image = req.file.originalname
-  
-    try {
-      // Validasi data input
-      if (!id_product) {
-        return res.status(400).json({
-          message: "Please provide id_product",
-        });
-      }
-  
-      // Dapatkan detail produk yang akan diperbarui dari database
-      const [fetchResult] = await db.query(
-        "SELECT * FROM tbl_products WHERE id_product = ?",
-        [id_product]
-      );
-  
-      if (!fetchResult.length) {
-        return res.status(404).json({
-          message: "Product Not Found",
-        });
-      }
-  
-      // Ambil nilai yang ada jika tidak ada perubahan di request body
-      const newName =
-        product_name !== undefined ? product_name : fetchResult[0].product_name;
-      const newDesc =
-        description !== undefined ? description : fetchResult[0].description;
-      const newPrice = price !== undefined ? price : fetchResult[0].price;
-      const newStock = stock !== undefined ? stock : fetchResult[0].stock;
-  
-      // Jika tidak ada file yang diunggah, gunakan image yang ada di database
-      if (!req.file) {
-        image = fetchResult[0].image;
-      } else {
-        // Hapus gambar lama jika ada
-        const oldImagePath = path.join(__dirname, "..", fetchResult[0].image);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
-        }
-      }
-  
-      // Query untuk melakukan update
-      const updateSql = 'UPDATE tbl_products SET product_name = ?, description = ?, price = ?, stock = ?, image = ?, id_category = ? WHERE id_product = ?';
-      const [result] = await db.query(updateSql, [
-        newName !== undefined ? newName : fetchResult[0].product_name,
-        newDesc !== undefined ? newDesc : fetchResult[0].description,
-        newPrice !== undefined ? newPrice : fetchResult[0].price,
-        newStock !== undefined ? newStock : fetchResult[0].stock,
-        image !== undefined ? image : fetchResult[0].image,
-        id_category !== undefined ? id_category : fetchResult[0].id_category,
-        id_product,
-      ]);
-  
-      if (result.affectedRows) {
-        // Kirim respons JSON jika berhasil melakukan update
-        res.json({
-          payload: { isSuccess: result.affectedRows },
-          message: "Success Update Product",
-        });
-      } else {
-        // Kirim respons JSON jika produk tidak ditemukan
-        res.status(404).json({
-          message: "Product Not Found",
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      // Kirim respons JSON jika terjadi kesalahan server
-      res.status(500).json({
-        message: "Internal Server Error",
-        serverMessage: err.message,
+  const { id_product, product_name, description, price, stock, id_category } =
+    req.body;
+  let image = req.file.originalname;
+
+  try {
+    // Validasi data input
+    if (!id_product) {
+      return res.status(400).json({
+        message: "Please provide id_product",
       });
     }
-  };
+
+    // Dapatkan detail produk yang akan diperbarui dari database
+    const [fetchResult] = await db.query(
+      "SELECT * FROM tbl_products WHERE id_product = ?",
+      [id_product]
+    );
+
+    if (!fetchResult.length) {
+      return res.status(404).json({
+        message: "Product Not Found",
+      });
+    }
+
+    // Ambil nilai yang ada jika tidak ada perubahan di request body
+    const newName =
+      product_name !== undefined ? product_name : fetchResult[0].product_name;
+    const newDesc =
+      description !== undefined ? description : fetchResult[0].description;
+    const newPrice = price !== undefined ? price : fetchResult[0].price;
+    const newStock = stock !== undefined ? stock : fetchResult[0].stock;
+
+    // Jika tidak ada file yang diunggah, gunakan image yang ada di database
+    if (!req.file) {
+      image = fetchResult[0].image;
+    } else {
+      // Hapus gambar lama jika ada
+      const oldImagePath = path.join(__dirname, "..", fetchResult[0].image);
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
+      }
+    }
+
+    // Query untuk melakukan update
+    const updateSql =
+      "UPDATE tbl_products SET product_name = ?, description = ?, price = ?, stock = ?, image = ?, id_category = ? WHERE id_product = ?";
+    const [result] = await db.query(updateSql, [
+      newName !== undefined ? newName : fetchResult[0].product_name,
+      newDesc !== undefined ? newDesc : fetchResult[0].description,
+      newPrice !== undefined ? newPrice : fetchResult[0].price,
+      newStock !== undefined ? newStock : fetchResult[0].stock,
+      image !== undefined ? image : fetchResult[0].image,
+      id_category !== undefined ? id_category : fetchResult[0].id_category,
+      id_product,
+    ]);
+
+    if (result.affectedRows) {
+      // Kirim respons JSON jika berhasil melakukan update
+      res.json({
+        payload: { isSuccess: result.affectedRows },
+        message: "Success Update Product",
+      });
+    } else {
+      // Kirim respons JSON jika produk tidak ditemukan
+      res.status(404).json({
+        message: "Product Not Found",
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    // Kirim respons JSON jika terjadi kesalahan server
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err.message,
+    });
+  }
+};
 
 // Get All category
 const getAllCategories = async (req, res) => {

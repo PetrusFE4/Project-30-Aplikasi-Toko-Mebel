@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const path = require('path')
+const path = require("path");
 const adminController = require("../controller/adminController");
-const multer = require('multer')
+const multer = require("multer");
 const authMiddleware = require("../middleware/auth");
 const adminRole = require("../middleware/adminRole");
 
@@ -10,15 +10,14 @@ router.use(authMiddleware);
 router.use(adminRole);
 
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'image'); // Specify your upload directory
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname)); // Rename file to avoid conflicts
-    }
+  destination: function (req, file, cb) {
+    cb(null, "image"); // Specify your upload directory
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)); // Rename file to avoid conflicts
+  },
 });
 const upload = multer({ storage: storage });
-
 
 // Middleware untuk semua rute admin
 
@@ -29,17 +28,21 @@ router.put("/", adminController.updateUserRole);
 
 // Routes untuk produk
 router.get("/products", adminController.getAllProducts);
-router.put("/products",  upload.single('image'), adminController.updateProduct);
+router.put("/products", upload.single("image"), adminController.updateProduct);
 router.delete("/products", adminController.deleteProduct);
-router.post("/products", upload.single('image'), adminController.createProduct);
+router.post("/products", upload.single("image"), adminController.createProduct);
 
 // Routes untuk kategori
 router.get("/category", adminController.getAllCategories);
-router.put("/category",  upload.single('image'), adminController.updateCategory);
+router.put("/category", upload.single("image"), adminController.updateCategory);
 router.delete("/category", adminController.deleteCategory);
-router.post("/category",  upload.single('image'), adminController.createCategory);
+router.post(
+  "/category",
+  upload.single("image"),
+  adminController.createCategory
+);
 
 // Routes untuk riwayat transaksi
-router.get("/", adminController.getTransactionHistory);
+router.get("/transaction", adminController.getTransactionHistory);
 
 module.exports = router;

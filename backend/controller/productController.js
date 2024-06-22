@@ -23,7 +23,7 @@ const getProductsByCategory = async (req, res) => {
       const sql = `
           SELECT p.*, c.id_category 
           FROM tbl_products p 
-          JOIN tbl_categories c ON p.id_category = c.id_category
+          JOIN tbl_categorys c ON p.id_category = c.id_category
           WHERE c.category_name = ?`;
       const [rows] = await db.query(sql, [category_name]);
       if (rows.length === 0) {
