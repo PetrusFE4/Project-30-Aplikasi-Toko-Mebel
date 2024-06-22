@@ -9,7 +9,7 @@ const getAllProduct = async (req, res) => {
       message: "Success Show All Product!",
     });
   } catch (err) {
-    console.error('Error executing query:', err);
+    console.error("Error executing query:", err);
     res.status(500).json({
       message: "Internal Server Error",
       serverMessage: err,
@@ -20,31 +20,29 @@ const getAllProduct = async (req, res) => {
 const getProductsByCategory = async (req, res) => {
   const { category_name } = req.params;
   try {
-      const sql = `
+    const sql = `
           SELECT p.*, c.id_category 
           FROM tbl_products p 
           JOIN tbl_categorys c ON p.id_category = c.id_category
           WHERE c.category_name = ?`;
-      const [rows] = await db.query(sql, [category_name]);
-      if (rows.length === 0) {
-          return res.status(404).json({
-              message: `No products found in category '${category_name}'`,
-          });
-      }
-      res.json({
-          payload: rows,
-          message: `Products in category '${category_name}'`,
+    const [rows] = await db.query(sql, [category_name]);
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: `No products found in category '${category_name}'`,
       });
+    }
+    res.json({
+      payload: rows,
+      message: `Products in category '${category_name}'`,
+    });
   } catch (err) {
-      console.error('Error executing query:', err);
-      res.status(500).json({
-          message: "Internal Server Error",
-          serverMessage: err,
-      });
+    console.error("Error executing query:", err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err,
+    });
   }
 };
-
-
 
 const getSingleProduct = async (req, res) => {
   const { id_product } = req.params;
@@ -61,7 +59,7 @@ const getSingleProduct = async (req, res) => {
       message: `Product details for ID ${id_product}`,
     });
   } catch (err) {
-    console.error('Error executing query:', err);
+    console.error("Error executing query:", err);
     res.status(500).json({
       message: "Internal Server Error",
       serverMessage: err,
@@ -72,5 +70,5 @@ const getSingleProduct = async (req, res) => {
 module.exports = {
   getAllProduct,
   getProductsByCategory,
-  getSingleProduct
+  getSingleProduct,
 };
