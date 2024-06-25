@@ -35,7 +35,7 @@ const getAllUsers = async (req, res) => {
 // Delete a user (Admin only)
 const deleteUser = async (req, res) => {
   const { id_user } = req.body;
-  const sql = `DELETE FROM tbl_users WHERE id_user = ?`;
+  const sql = "DELETE FROM tbl_users WHERE id_user = ?";
   try {
     const [result] = await db.query(sql, [id_user]);
     if (result.affectedRows) {
@@ -60,7 +60,7 @@ const deleteUser = async (req, res) => {
 // Update user role (Admin only)
 const updateUserRole = async (req, res) => {
   const { id_user, role } = req.body;
-  const sql = `UPDATE tbl_users SET role = ? WHERE id_user = ?`;
+  const sql = "UPDATE tbl_users SET role = ? WHERE id_user = ?";
   try {
     const [result] = await db.query(sql, [role, id_user]);
     if (result.affectedRows) {
@@ -85,7 +85,7 @@ const updateUserRole = async (req, res) => {
 // Get all products
 const getAllProducts = async (req, res) => {
   const sql =
-    "SELECT id_product, product_name, description, price, stock, image FROM tbl_products";
+    "SELECT id_product, product_name, description, price, stock, photos FROM tbl_products";
   try {
     const [rows] = await db.query(sql);
     res.json({
@@ -101,6 +101,7 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+// Create product
 const createProduct = async (req, res) => {
   try {
     const { product_name, description, price, stock, id_category } = req.body;
@@ -129,7 +130,8 @@ const createProduct = async (req, res) => {
       throw new Error("No file uploaded");
     }
 
-    const sql = `INSERT INTO tbl_products (product_name, description, price, stock, image, id_category) VALUES (?, ?, ?, ?, ?, ?)`;
+    const sql =
+      "INSERT INTO tbl_products (product_name, description, price, stock, image, id_category) VALUES (?, ?, ?, ?, ?, ?)";
     const values = [
       product_name,
       description,
@@ -239,6 +241,28 @@ const updateProduct = async (req, res) => {
   }
 };
 
+// Delete product
+const deleteProduct = async (req, res) => {
+  const { id_product } = req.body;
+  try {
+    const sql = "DELETE FROM tbl_products WHERE id_product = ?";
+    const [result] = await db.query(sql, [id_product]);
+    res.json({
+      payload: {
+        isSuccess: result.affectedRows,
+        message: result.message,
+      },
+      message: "Success Delete Data",
+    });
+  } catch (err) {
+    console.error("Error executing query:", err);
+    res.status(500).json({
+      message: "Internal Server Error",
+      serverMessage: err,
+    });
+  }
+};
+
 // Get All category
 const getAllCategories = async (req, res) => {
   const sql = "SELECT id_category, category_name FROM tbl_categorys";
@@ -283,7 +307,8 @@ const createCategory = async (req, res) => {
       throw new Error("No file uploaded");
     }
 
-    const sql = `INSERT INTO tbl_categorys (category_name, categorys, image) VALUES (?, ?, ?)`;
+    const sql =
+      "INSERT INTO tbl_categorys (category_name, categorys, image) VALUES (?, ?, ?)";
     const values = [category_name, categorys, image];
 
     const [result] = await db.query(sql, values);
@@ -387,33 +412,11 @@ const updateCategory = async (req, res) => {
   }
 };
 
-// Delete product
-const deleteProduct = async (req, res) => {
-  const { id_product } = req.body;
-  try {
-    const sql = `DELETE FROM tbl_products WHERE id_product = ?`;
-    const [result] = await db.query(sql, [id_product]);
-    res.json({
-      payload: {
-        isSuccess: result.affectedRows,
-        message: result.message,
-      },
-      message: "Success Delete Data",
-    });
-  } catch (err) {
-    console.error("Error executing query:", err);
-    res.status(500).json({
-      message: "Internal Server Error",
-      serverMessage: err,
-    });
-  }
-};
-
 // Delete category
 const deleteCategory = async (req, res) => {
   const { id_category } = req.body;
   try {
-    const sql = `DELETE FROM tbl_categorys WHERE id_category = ?`;
+    const sql = "DELETE FROM tbl_categorys WHERE id_category = ?";
     const [result] = await db.query(sql, [id_category]);
 
     if (result.affectedRows) {
@@ -435,24 +438,50 @@ const deleteCategory = async (req, res) => {
   }
 };
 
+// Create transaction history
+const createTransactionHistory = async (orderDetails) => {
+  const { id_order, id_user, total_amount, transaction_date } = orderDetails;
+  const sql =
+    "INSERT INTO transaction_historys (id_order, id_user, total_amount, transaction_date) VALUES (?, ?, ?, ?)";
+  const values = [id_order, id_user, total_amount, transaction_date];
+  try {
+    const [result] = await db.query(sql, values);
+    return result.insertId; // Return the inserted id if needed
+  } catch (err) {
+    console.error("Error executing query:", err);
+    throw err;
+  }
+};
+
 // Get transaction history (Admin only)
-const getTransactionHistory = async (req, res) => {
+const getTransactionHistory = async () => {
   const sql = `SELECT th.*, op.id_product, p.product_name, p.price
-                 FROM transaction_history th
-                 JOIN order_product op ON th.id_order = op.id_order
-                 JOIN tbl_products p ON op.id_product = p.id_product`;
+               FROM transaction_historys th
+               JOIN order_product op ON th.id_order = op.id_order
+               JOIN tbl_products p ON op.id_product = p.id_product`;
   try {
     const [rows] = await db.query(sql);
-    res.json({
-      payload: rows,
-      message: "Success GET transaction history",
-    });
+    return rows;
   } catch (err) {
-    console.error(err);
-    res.status(500).json({
-      message: "Internal Server Error",
-      serverMessage: err,
-    });
+    console.error("Error executing query:", err);
+    throw err;
+  }
+};
+
+// Update transaction history (if needed)
+const updateTransactionHistory = async (id_order, updatedDetails) => {
+  // Implement update logic if necessary
+};
+
+// Delete transaction history
+const deleteTransactionHistory = async (id_order) => {
+  const sql = "DELETE FROM transaction_historys WHERE id_order = ?";
+  try {
+    const [result] = await db.query(sql, [id_order]);
+    return result.affectedRows > 0;
+  } catch (err) {
+    console.error("Error executing query:", err);
+    throw err;
   }
 };
 
@@ -469,4 +498,7 @@ module.exports = {
   updateCategory,
   deleteCategory,
   getTransactionHistory,
+  createTransactionHistory,
+  updateTransactionHistory,
+  deleteTransactionHistory,
 };

@@ -19,8 +19,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Middleware untuk semua rute admin
-
 // Routes untuk pengguna
 router.get("/", adminController.getAllUsers);
 router.delete("/", adminController.deleteUser);
@@ -43,6 +41,19 @@ router.post(
 );
 
 // Routes untuk riwayat transaksi
-router.get("/transaction", adminController.getTransactionHistory);
+router.get("/", adminController.getTransactionHistory);
+router.post("/transaction_history", adminController.createTransactionHistory);
+router.get(
+  "/transaction_history/:id",
+  adminController.getTransactionHistory
+);
+router.put(
+  "/transaction_history/:id",
+  adminController.updateTransactionHistory
+);
+router.delete(
+  "/transaction_history/:id",
+  adminController.deleteTransactionHistory
+);
 
 module.exports = router;

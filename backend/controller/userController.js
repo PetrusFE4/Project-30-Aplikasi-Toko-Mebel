@@ -77,6 +77,12 @@ const register = async (req, res) => {
   }
 };
 
+const logout = async (req, res) => {
+  res.json({
+    message: "Logout successful"
+  })
+}
+
 // Function to get all users
 const getAllUsers = async (req, res) => {
   const sql = "SELECT * FROM tbl_users";
@@ -122,6 +128,7 @@ const getSingleUser = async (req, res) => {
 module.exports = {
     login,
     register,
+    logout,
     getAllUsers,
     getSingleUser,
 };

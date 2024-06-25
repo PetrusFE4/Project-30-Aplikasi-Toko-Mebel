@@ -7,8 +7,5 @@ router.use(authMiddleware);
 
 router.get('/transaction-histories', transaction_historyController.getAllTransactionHistories);
 router.get('/transaction-histories/:id_riwayat', transaction_historyController.getTransactionHistoryById);
-router.post('/transaction-histories', transaction_historyController.createTransactionHistory);
-router.put('/transaction-histories/:id_riwayat', transaction_historyController.updateTransactionHistory);
-router.delete('/transaction-histories/:id_riwayat', transaction_historyController.deleteTransactionHistory);
 
 module.exports = router;
