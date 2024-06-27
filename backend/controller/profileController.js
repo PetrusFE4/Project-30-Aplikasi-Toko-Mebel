@@ -18,7 +18,7 @@ const getProfile = async (req, res) => {
   const id_user = req.user.id_user;
 
   try {
-    const [results] = await db.execute('SELECT id_user, username, email, password, no_hp FROM tbl_users WHERE id_user = ?', [id_user]);
+    const [results] = await db.execute('SELECT id_user, username, email, password, image, no_hp FROM tbl_users WHERE id_user = ?', [id_user]);
 
     if (results.length === 0) {
       return res.status(404).json({ msg: 'Profil tidak ditemukan' });
