@@ -470,7 +470,28 @@ const getTransactionHistory = async () => {
 
 // Update transaction history (if needed)
 const updateTransactionHistory = async (id_order, updatedDetails) => {
-  // Implement update logic if necessary
+  const fields = [];
+  const values = [];
+
+  // Iterate over the updatedDetails object to construct the SQL query
+  for (const [key, value] of Object.entries(updatedDetails)) {
+    fields.push(`${key} = ?`);
+    values.push(value);
+  }
+
+  // Join fields with commas to create the SET part of the query
+  const setClause = fields.join(", ");
+  values.push(id_order); // Add id_order to the values array for the WHERE clause
+
+  const sql = `UPDATE transaction_historys SET ${setClause} WHERE id_order = ?`;
+
+  try {
+    const [result] = await db.query(sql, values);
+    return result.affectedRows > 0; // Return true if the update was successful
+  } catch (err) {
+    console.error("Error executing query:", err);
+    throw err;
+  }
 };
 
 // Delete transaction history
