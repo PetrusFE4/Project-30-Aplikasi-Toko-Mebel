@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "./Navbar";
 import "../css/Login.css";
+import { login } from "./HandleAPI_User";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -11,15 +12,17 @@ const Login = () => {
   const handleEmailChange = (e) => setEmail(e.target.value);
   const handlePasswordChange = (e) => setPassword(e.target.value);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email || !password) {
-      setError("Both email and password are required.");
-    } else {
-      setError("");
-      // Proceed with form submission
-      // For example, you could send a request to the server here
-      console.log("Form submitted with:", { email, password });
+      setError("Email dan password harus diisi.");
+      return;
+    }
+    try {
+      await login(email, password);
+    } catch (error) {
+      setError("Email atau Password salah");
+      console.error("Login error:", error);
     }
   };
 

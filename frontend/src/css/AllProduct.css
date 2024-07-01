@@ -31,8 +31,6 @@
 
 /* Styling for the main container */
 .container-allproduct {
-  display: flex;
-  flex-wrap: nowrap;
   margin: 75px;
 }
 /* 

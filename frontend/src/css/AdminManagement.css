@@ -107,3 +107,92 @@
   font-weight: bold;
   margin: 0;
 }
+
+.container-admin {
+  padding: 20px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.container-admin h2 {
+  margin-bottom: 20px;
+}
+
+.table-admin {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-admin th,
+.table-admin td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+.table-admin th {
+  background-color: #f2f2f2;
+}
+
+.table-admin td {
+  background-color: #fff;
+}
+
+.btn-edit,
+.btn-delete {
+  margin-right: 5px;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.modal-content-admin {
+  background-color: #fefefe;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 1000px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  position: relative; /* Add position relative for the close button */
+}
+
+.btn-create-admin {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: #294b29;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-create-admin:hover {
+  background-color: #152515;
+  color: #fff;
+}
+
+.modal .btn-edit-admin {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  background-color: transparent;
+  color: #294b29;
+  border: 2px solid #294b29;
+  border-radius: 5px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.modal .btn-edit-admin:hover {
+  background-color: #294b29;
+  color: #fff;
+}

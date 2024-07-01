@@ -1,77 +1,127 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
-import axios from "axios";
-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faCartShopping,
   faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
-import { useCart } from "../components/CartContext";
-import image3 from "../images/user3-128x128.jpg";
 import logo from "../images/logo.png";
 import "../css/Navbar.css";
+import {
+  fetchProducts,
+  fetchCategories,
+  fetchCart,
+  fetchUserData,
+  logout,
+} from "./HandleAPI_User";
 
 // Komponen Navbar
 const Navbar = () => {
-  // Gunakan useCart untuk mengakses data keranjang belanja
-  const { cart, calculateSubtotal } = useCart();
-  // Deklarasikan state untuk pencarian dan hasil pencarian
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userData, setUserData] = useState(false);
 
-  // Mengambil data produk dari API atau data lokal saat komponen dimount
   useEffect(() => {
-    const fetchProducts = async () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsLoggedIn(true);
+      getUserData();
+    } else {
+      setIsLoggedIn(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const response = await fetch("https://fakestoreapi.com/products");
-        const products = await response.json();
-        setAllProducts(products);
+        const productsData = await fetchProducts();
+        const categoriesData = await fetchCategories();
+
+        const mergedProducts = productsData.map((product) => {
+          const category = categoriesData.find(
+            (cat) => cat.id_category === product.id_category
+          );
+          return {
+            ...product,
+            category_name: category ? category.category_name : "Unknown",
+          };
+        });
+
+        setAllProducts(mergedProducts);
+        setCategories(categoriesData);
       } catch (error) {
-        console.error("Error fetching products:", error);
+        console.error("Error fetching data", error);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
 
-  // Fungsi untuk menghandle perubahan input pencarian
-  const handleSearchInputChange = (event) => {
-    const query = event.target.value;
-    setSearchQuery(query);
-  };
-
-  // Fungsi untuk melakukan pencarian berdasarkan searchQuery
   useEffect(() => {
     if (searchQuery) {
       const results = allProducts.filter((product) =>
-        product.title.toLowerCase().includes(searchQuery.toLowerCase())
+        product.product_name.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setSearchResults(results);
     } else {
       setSearchResults([]);
     }
   }, [searchQuery, allProducts]);
-  useEffect(() => {
-    // Fetch products
 
-    // Fetch categories
-    axios
-      .get("https://fakestoreapi.com/products/categories")
-      .then((response) => {
-        setCategories(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching the categories:", error);
-      });
+  useEffect(() => {
+    const getCart = async () => {
+      try {
+        const cartData = await fetchCart(); // Assuming fetchCart() fetches cart items
+        const productsData = await fetchProducts();
+
+        const mergedCartItems = cartData.map((cartItem) => {
+          const product = productsData.find(
+            (product) => product.id_product === cartItem.id_product
+          );
+          return {
+            ...cartItem,
+            ...product,
+          };
+        });
+
+        setCartItems(mergedCartItems);
+      } catch (error) {
+        return;
+      }
+    };
+
+    getCart();
   }, []);
-  // Fungsi untuk merender item keranjang belanja
+
+  const handleSearchInputChange = (event) => {
+    const query = event.target.value;
+    setSearchQuery(query);
+  };
+
+  const getUserData = async () => {
+    try {
+      const data = await fetchUserData();
+      if (data.role === "admin") {
+        setIsAdmin(true);
+      }
+      setUserData(data);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
+
   const renderItems = () => {
-    // Jika tidak ada item dalam keranjang
-    if (!cart || cart.length === 0) {
+    if (!cartItems || cartItems.length === 0) {
       return (
         <li className="dropdown-item">
           <b>No items in cart</b>
@@ -79,28 +129,36 @@ const Navbar = () => {
       );
     }
 
-    // Jika ada item dalam keranjang
+    const formatter = new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+    });
+
+    const total = cartItems
+      .reduce((acc, item) => acc + item.quantity * parseFloat(item.price), 0)
+      .toFixed(2);
+
     return (
       <>
-        {cart.map((item) => (
-          <li key={item.id} className="dropdown-item d-flex">
+        {cartItems.map((item) => (
+          <li key={item.id_cart} className="dropdown-item d-flex">
             <img
-              src={item.image}
+              src={`http://localhost:4000${item.image}`}
               alt={item.title}
               width="64"
               height="64"
               className="flex-shrink-0"
             />
             <div className="d-flex flex-column justify-content-between ms-3">
-              <h6>{item.title}</h6>
+              <h6>{item.product_name}</h6>
               <p>
-                {item.quantity} x $ {item.price}
+                {item.quantity} x $ {formatter.format(item.price)}
               </p>
             </div>
           </li>
         ))}
         <li className="dropdown-item">
-          <b>Total</b>: $ {calculateSubtotal()}
+          <b>Total</b>: {formatter.format(total)}
         </li>
         <li className="dropdown-divider"></li>
         <li>
@@ -172,13 +230,13 @@ const Navbar = () => {
                     Kategori
                   </a>
                   <ul className="dropdown-menu">
-                    {categories.map((category, index) => (
-                      <li key={index}>
+                    {categories.map((category) => (
+                      <li key={category.id_category}>
                         <Link
-                          to={`/category/${category}`}
+                          to={`/category/${category.category_name}`}
                           className="dropdown-item"
                         >
-                          {category}
+                          {category.category_name}
                         </Link>
                       </li>
                     ))}
@@ -194,16 +252,6 @@ const Navbar = () => {
                     FAQS
                   </HashLink>
                 </li>
-                {/* <li className="nav-item">
-                  <Link to="/profile" className="nav-link">
-                    Profile
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link to="/admin" className="nav-link">
-                    admin
-                  </Link>
-                </li> */}
               </ul>
               <div className="nav navbar-nav justify-content-center flex-grow-1 pe-3">
                 <div className="container fluid">
@@ -226,12 +274,12 @@ const Navbar = () => {
                     {searchResults.length > 0 && (
                       <ul className="dropdown-menu show search-dropdown position-absolute">
                         {searchResults.map((result) => (
-                          <li key={result.id}>
+                          <li key={result.id_product}>
                             <Link
-                              to={`/product/${result.id}`}
+                              to={`/product/${result.id_product}`}
                               className="dropdown-item"
                             >
-                              {result.title}
+                              {result.product_name}
                             </Link>
                           </li>
                         ))}
@@ -252,7 +300,7 @@ const Navbar = () => {
                   >
                     <FontAwesomeIcon icon={faCartShopping} />
                     <span className="position-absolute top-5 translate-middle badge bg-danger navbar-badge">
-                      {cart.length}
+                      {cartItems.length}
                     </span>
                   </a>
                   <ul
@@ -262,17 +310,57 @@ const Navbar = () => {
                     {renderItems()}
                   </ul>
                 </li>
-                <li className="nav-item">
-                  <Link to="/login" className="btn btn-outline-light ms-2 px-4">
-                    Login
-                  </Link>
-                  {/* <Link
-                    to="/register"
-                    className="btn btn-info btn-light ms-2 px-4 btn"
-                  >
-                    Daftar
-                  </Link> */}
-                </li>
+                {isLoggedIn ? (
+                  <li className="nav-item dropdown">
+                    <a
+                      href="#"
+                      className="nav-link"
+                      id="userDropdown"
+                      role="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                    >
+                      {/* <FontAwesomeIcon icon={faUser} /> */}
+                      {/* <img
+                        src={userData.avatarUrl}
+                        alt={userData.username}
+                        className="avatar"
+                      /> */}
+                      {userData.username}
+                    </a>
+                    <ul className="dropdown-menu dropdown-menu-end">
+                      <li>
+                        <a className="dropdown-item" href="/profile">
+                          Profile
+                        </a>
+                      </li>
+                      {isAdmin && (
+                        <li>
+                          <Link to="/admin" className="dropdown-item">
+                            Admin Dashboard
+                          </Link>
+                        </li>
+                      )}
+                      <li>
+                        <button
+                          className="dropdown-item"
+                          onClick={handleLogout}
+                        >
+                          Logout
+                        </button>
+                      </li>
+                    </ul>
+                  </li>
+                ) : (
+                  <li className="nav-item">
+                    <Link
+                      to="/login"
+                      className="btn btn-outline-light ms-2 px-4"
+                    >
+                      Login
+                    </Link>
+                  </li>
+                )}
               </ul>
             </div>
           </div>

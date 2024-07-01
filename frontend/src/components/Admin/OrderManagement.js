@@ -1,7 +1,7 @@
 // src/components/Admin/OrderManagement.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "../../css/Admin-css/ordermanagement.css";
+import "../../css/AdminManagement.css";
 
 const OrderManagement = () => {
   const [orders, setOrders] = useState([]);

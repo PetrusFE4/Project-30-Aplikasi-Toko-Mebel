@@ -1,9 +1,7 @@
 // AdminDashboard.js
 
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
-import "../../css/Admin-css/dashboardadmin.css";
+import "../../css/AdminManagement.css";
 import logo from "../../images/logo.png"; // Ganti path dengan path sesuai logo Anda
 
 // Import komponen-komponen untuk Product Management dan lainnya
@@ -11,8 +9,11 @@ import ProductManagement from "./ProductManagement";
 import CategoryManagement from "./CategoryManagement";
 import OrderManagement from "./OrderManagement";
 import UserManagement from "./UserManagement";
-import Reports from "./Reports";
-
+import {
+  fetchAllUsers,
+  fetchProducts,
+  fetchCategories, // Import fetchCategories function
+} from "./HandleAPI_Admin";
 const AdminDashboard = () => {
   const [activeContent, setActiveContent] = useState(null);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -20,37 +21,20 @@ const AdminDashboard = () => {
   const [totalUsers, setTotalUsers] = useState(0);
 
   useEffect(() => {
-    fetchProductData();
-    fetchCategoryData();
-    fetchUserData();
+    const fetchData = async () => {
+      try {
+        const productsData = await fetchProducts();
+        const categoriesData = await fetchCategories(); // Fetch categories
+        const allUsersData = await fetchAllUsers();
+        setTotalProducts(productsData.length);
+        setTotalCategories(categoriesData.length); // Assuming categories are in payload[0]
+        setTotalUsers(allUsersData.length);
+      } catch (error) {
+        console.error("Error fetching data product & category", error);
+      }
+    };
+    fetchData();
   }, []);
-
-  const fetchProductData = async () => {
-    try {
-      const response = await axios.get("https://fakestoreapi.com/products");
-      setTotalProducts(response.data.length);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
-
-  const fetchCategoryData = async () => {
-    try {
-      const response = await axios.get("https://fakestoreapi.com/products/categories");
-      setTotalCategories(response.data.length);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-
-  const fetchUserData = async () => {
-    try {
-      const response = await axios.get("https://fakestoreapi.com/users");
-      setTotalUsers(response.data.length);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    }
-  };
 
   const showProductManagement = () => {
     setActiveContent(<ProductManagement />);
@@ -66,10 +50,6 @@ const AdminDashboard = () => {
 
   const showUserManagement = () => {
     setActiveContent(<UserManagement />);
-  };
-
-  const showReports = () => {
-    setActiveContent(<Reports />);
   };
 
   const hideActiveContent = () => {
@@ -97,9 +77,7 @@ const AdminDashboard = () => {
           <button onClick={showUserManagement}>
             <i className="fas fa-users"></i> Manage Users
           </button>
-          <button onClick={showReports}>
-            <i className="fas fa-chart-line"></i> View Reports
-          </button>
+
           {/* Tambahkan tautan lainnya di sini */}
         </div>
       </div>

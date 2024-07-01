@@ -21,6 +21,7 @@ const BackToTopButton = () => {
       behavior: "smooth",
     });
   };
+
   return (
     <div>
       {backToTopButton && (

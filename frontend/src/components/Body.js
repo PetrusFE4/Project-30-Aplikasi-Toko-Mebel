@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSackDollar,
@@ -16,45 +15,58 @@ import banner1 from "../images/design1.png";
 import banner2 from "../images/design2.png";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { useCart } from "../components/CartContext";
+import { fetchProducts, fetchCategories, addToCart } from "./HandleAPI_User";
 
 const Body = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [currentPage] = useState(1);
-  const productsPerPage = 10;
-  const { addToCart } = useCart();
+  const productsPerPage = 8;
 
-  const handleAddToCart = (product) => {
-    addToCart(product);
-  };
   useEffect(() => {
-    // Fetch products
-    axios
-      .get("https://fakestoreapi.com/products")
-      .then((response) => {
-        setProducts(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching the products:", error);
-      });
+    const fetchData = async () => {
+      try {
+        const productsData = await fetchProducts();
+        const categoriesData = await fetchCategories();
+        console.log(categoriesData);
+        const mergedProducts = productsData.map((product) => {
+          const category = categoriesData.find(
+            (cat) => cat.id_category === product.id_category
+          );
+          return {
+            ...product,
+            category_name: category ? category.category_name : "Unknown",
+          };
+        });
 
-    // Fetch categories
-    axios
-      .get("https://fakestoreapi.com/products/categories")
-      .then((response) => {
-        setCategories(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching the categories:", error);
-      });
+        setProducts(mergedProducts);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Error fetching data product & category", error);
+      }
+    };
+
     AOS.init({
       duration: 1000,
       once: false,
     });
+
+    fetchData();
   }, []);
 
-  // Get current products
+  const formatter = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+  });
+
+  const handleAddToCart = (product) => {
+    addToCart(product, 1);
+  };
+
+  if (!products) {
+    return;
+  }
+
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
   const currentProducts = products.slice(
@@ -68,11 +80,11 @@ const Body = () => {
         <div className="container">
           {/* Bagian Why Choose Us */}
           <section id="why-choose-us" className="why-choose-us-section">
-            <div className="row">
-              <h2>
-                Our <span>Service</span>
-              </h2>
-              <div className="col-md-3" data-aos="fade-up">
+            <h2>
+              <span>Layanan</span> Kami
+            </h2>
+            <div className="row g-4 row-cols-1 row-cols-md-2 row-cols-lg-4">
+              <div className="col" data-aos="fade-up">
                 <div className="card why-choose-us-card card-transition">
                   <div className="icon-wrapper mt-3">
                     <FontAwesomeIcon
@@ -89,7 +101,7 @@ const Body = () => {
                   </div>
                 </div>
               </div>
-              <div className="col-md-3" data-aos="fade-up" data-aos-delay="100">
+              <div className="col" data-aos="fade-up" data-aos-delay="100">
                 <div className="card why-choose-us-card card-transition">
                   <div className="icon-wrapper mt-3">
                     <FontAwesomeIcon
@@ -106,7 +118,7 @@ const Body = () => {
                   </div>
                 </div>
               </div>
-              <div className="col-md-3" data-aos="fade-up" data-aos-delay="200">
+              <div className="col" data-aos="fade-up" data-aos-delay="200">
                 <div className="card why-choose-us-card card-transition">
                   <div className="icon-wrapper mt-3">
                     <FontAwesomeIcon
@@ -123,7 +135,7 @@ const Body = () => {
                   </div>
                 </div>
               </div>
-              <div className="col-md-3" data-aos="fade-up" data-aos-delay="300">
+              <div className="col" data-aos="fade-up" data-aos-delay="300">
                 <div className="card why-choose-us-card card-transition">
                   <div className="icon-wrapper mt-3">
                     <FontAwesomeIcon
@@ -205,9 +217,9 @@ const Body = () => {
                       <span className="fw-bold">30%</span>
                       Off
                     </p>
-                    <a href="#!" className="btn btn-dark">
+                    <Link to="/all-products" className="btn btn-dark">
                       Shop Now
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -227,9 +239,9 @@ const Body = () => {
                       <span className="fw-bold">30%</span>
                       Off
                     </p>
-                    <a href="#!" className="btn btn-dark">
+                    <Link to="/all-products" className="btn btn-dark">
                       Shop Now
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -239,25 +251,28 @@ const Body = () => {
           <section id="category">
             {/* <hr /> */}
             <h1 className="h1-center">Kategori</h1>
-            <div className="row">
-              {categories.map((category, index) => (
-                <div className="col-md-3" key={index}>
-                  <div className="card card-transition">
-                    <Link to={`/category/${category}`}>
-                      <img
-                        src={`https://fakestoreapi.com/img/category${
-                          index + 1
-                        }.jpg`} // Placeholder for category image
-                        className="card-img-top"
-                        alt={category}
-                      />
-                    </Link>
-                    <div className="card-body">
-                      <h5 className="card-title">{category}</h5>
-                      <p className="card-text">Description of {category}.</p>
+            <div className="row g-4 row-cols-1 row-cols-md-3 row-cols-lg-4">
+              {categories.map((category) => (
+                <Link
+                  to={`/category/${category.category_name}`}
+                  className="text-decoration-none text-inherit"
+                  key={category.id_category}
+                >
+                  <div className="col">
+                    <div className="card card-product mb-lg-4">
+                      <div className="card-body text-center py-8">
+                        <img
+                          src={`http://localhost:4000${category.image}`}
+                          alt="Category"
+                          className="mb-3 img-fluid card-img-top"
+                        />
+                        <div className="text-truncate">
+                          {category.category_name}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
             {/* <hr /> */}
@@ -272,49 +287,42 @@ const Body = () => {
                 Lihat Semua Produk →
               </Link>
             </div>
-            <div className="row g-4 row-cols-1 row-cols-md-3 row-cols-lg-5">
+            <div className="row g-4 row-cols-1 row-cols-md-3 row-cols-lg-4">
               {currentProducts.map((product) => (
-                <div className="col" key={product.id}>
+                <div className="col" key={product.id_product}>
                   <div className="card card-product">
                     <div className="card-body">
                       <div className="text-center position-relative">
-                        <Link to={`/product/${product.id}`}>
+                        <Link to={`/product/${product.id_product}`}>
                           <img
-                            src={product.image}
-                            alt="Grocery Ecommerce Template"
+                            src={`http://localhost:4000${product.image}`}
+                            alt="Product"
                             className="mb-3 img-fluid card-img-top"
                           />
                         </Link>
                       </div>
                       <div className="text-small mb-1">
                         <Link
-                          to={`/category/${product.category}`}
-                          className="text-inherit text-decoration-none text-dark"
+                          to={`/category/${product.category_name}`}
+                          className="text-decoration-none text-muted"
                         >
-                          <small>{product.category}</small>
+                          <small>{product.category_name}</small>
                         </Link>
                       </div>
                       <h5 className="card-title fs-6">
                         <Link
-                          to={`/product/${product.id}`}
+                          to={`/product/${product.id_product}`}
                           className="text-inherit text-decoration-none text-dark"
                         >
-                          {product.title}
+                          {product.product_name}
                         </Link>
                       </h5>
-                      <div>
-                        <small className="text-warning">
-                          <i className="fa-solid fa-star" />
-                          <i className="fa-solid fa-star" />
-                          <i className="fa-solid fa-starl" />
-                          <i className="fa-solid fa-star" />
-                          <i className="fa-solid fa-star-half" />
-                        </small>
-                        <span className="text-muted small">4.5(149)</span>
-                      </div>
+
                       <div className="d-flex justify-content-between align-items-center mt-3">
                         <div>
-                          <span className="text-dark">${product.price}</span>
+                          <span className="text-dark">
+                            {formatter.format(product.price)}
+                          </span>
                         </div>
                         <div>
                           <button

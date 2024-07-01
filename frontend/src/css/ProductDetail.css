@@ -161,7 +161,7 @@
 }
 
 .product-cards {
-  display: flex;
+  /* display: flex; */
   overflow: hidden;
   width: 100%;
   justify-content: center;

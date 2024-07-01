@@ -1,86 +1,477 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import "../../css/Admin-css/produkadmin.css";
+import "../../css/AdminManagement.css";
+
+import {
+  fetchProducts,
+  updateProduct,
+  deleteProduct,
+  createProduct,
+  fetchCategories, // Import fetchCategories function
+} from "./HandleAPI_Admin";
 
 const ProductManagement = () => {
-  const [products, setProducts] = useState([]);
-  const [editProductId, setEditProductId] = useState(null); // State untuk id produk yang sedang diedit
-  const [deleteProductId, setDeleteProductId] = useState(null); // State untuk id produk yang akan dihapus
+  const [products, setProducts] = useState(null);
+  const [categories, setCategories] = useState(null); // State to hold categories
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null); // State to hold selected product for editing
+  const [newProduct, setNewProduct] = useState({
+    product_name: "",
+    description: "",
+    price: "",
+    stock: "",
+    id_category: "", // Initialize id_category state
+  });
+  const [file, setFile] = useState(null); // State to hold selected file
+  const [error, setError] = useState("");
+
+  const formatter = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+  });
 
   useEffect(() => {
-    // Fetch products from Fake Store API
-    axios
-      .get("https://fakestoreapi.com/products")
-      .then((response) => setProducts(response.data))
-      .catch((error) => console.error("Error fetching products:", error));
+    const fetchData = async () => {
+      try {
+        const productsData = await fetchProducts();
+        const categoriesData = await fetchCategories();
+
+        const mergedProducts = productsData.map((product) => {
+          const category = categoriesData.find(
+            (cat) => cat.id_category === product.id_category
+          );
+          return {
+            ...product,
+            category_name: category ? category.category_name : "Unknown",
+          };
+        });
+
+        setProducts(mergedProducts);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Error fetching data product & category", error);
+      }
+    };
+    fetchData();
   }, []);
 
-  const handleEditProduct = (productId) => {
-    setEditProductId(productId);
+  const openEditModal = (product) => {
+    setSelectedProduct(product);
+    setFile(null);
+    setEditModalOpen(true);
   };
 
-  const handleDeleteProduct = (productId) => {
-    setDeleteProductId(productId);
+  const closeEditModal = () => {
+    setSelectedProduct(null);
+    setEditModalOpen(false);
   };
 
-  const cancelEdit = () => {
-    setEditProductId(null);
+  const openCreateModal = () => {
+    setFile(null);
+    setCreateModalOpen(true);
   };
 
-  const cancelDelete = () => {
-    setDeleteProductId(null);
+  const closeCreateModal = () => {
+    setCreateModalOpen(false);
   };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    if (selectedProduct) {
+      setSelectedProduct({
+        ...selectedProduct,
+        [name]: value,
+      });
+    } else {
+      setNewProduct({
+        ...newProduct,
+        [name]: value,
+      });
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setFile(file);
+  };
+
+  const handleDeleteProduct = async (id_product) => {
+    await deleteProduct(id_product);
+
+    const productsData = await fetchProducts();
+    setProducts(productsData);
+  };
+
+  const handleSubmitEdit = async () => {
+    if (
+      !selectedProduct.product_name ||
+      !selectedProduct.description ||
+      !selectedProduct.price ||
+      !selectedProduct.stock
+    ) {
+      setError("Please fill out all required fields.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("id_product", selectedProduct.id_product);
+    formData.append("product_name", selectedProduct.product_name);
+    formData.append("description", selectedProduct.description);
+    formData.append("price", selectedProduct.price);
+    formData.append("stock", selectedProduct.stock);
+
+    if (file) {
+      formData.append("image", file);
+    }
+
+    try {
+      const updateProducts = await updateProduct(formData);
+      if (updateProducts.payload.isSuccess) {
+        const productsData = await fetchProducts();
+        const categoriesData = await fetchCategories();
+
+        const mergedProducts = productsData.map((product) => {
+          const category = categoriesData.find(
+            (cat) => cat.id_category === product.id_category
+          );
+          return {
+            ...product,
+            category_name: category ? category.category_name : "Unknown",
+          };
+        });
+
+        setProducts(mergedProducts);
+      }
+
+      closeEditModal();
+    } catch (error) {
+      alert("Failed to update product");
+    }
+  };
+
+  const handleSubmitCreate = async () => {
+    if (
+      !newProduct.product_name ||
+      !newProduct.description ||
+      !newProduct.price ||
+      !newProduct.stock ||
+      !newProduct.id_category ||
+      !file
+    ) {
+      setError("Please fill out all required fields.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("product_name", newProduct.product_name);
+    formData.append("description", newProduct.description);
+    formData.append("price", newProduct.price);
+    formData.append("stock", newProduct.stock);
+    formData.append("id_category", newProduct.id_category);
+
+    if (file) {
+      formData.append("image", file);
+    }
+
+    try {
+      const createProducts = await createProduct(formData);
+      if (createProducts.payload.isSuccess) {
+        const productsData = await fetchProducts();
+        const categoriesData = await fetchCategories();
+
+        const mergedProducts = productsData.map((product) => {
+          const category = categoriesData.find(
+            (cat) => cat.id_category === product.id_category
+          );
+          return {
+            ...product,
+            category_name: category ? category.category_name : "Unknown",
+          };
+        });
+
+        setProducts(mergedProducts);
+      }
+      closeCreateModal();
+    } catch (error) {
+      alert("Failed to create product");
+    }
+  };
+
+  if (!products || !categories) {
+    return null; // or loading indicator
+  }
 
   return (
-    <div className="product-management">
-      <h2>Manage Products</h2>
-      <table className="product-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Price</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {products.map((product) => (
-            <tr key={product.id}>
-              <td>{product.id}</td>
-              <td>{editProductId === product.id ? <input type="text" defaultValue={product.title} /> : product.title}</td>
-              <td>${product.price}</td>
-              <td>
-                {editProductId === product.id ? (
-                  <>
-                    <button className="save-btn">Save</button>
-                    <button className="cancel-btn" onClick={cancelEdit}>
-                      Cancel
+    <div className="container-fluid container-admin">
+      <h2>Kelola Produk</h2>
+      <button className="btn btn-create-admin mb-4" onClick={openCreateModal}>
+        Tambah Produk
+      </button>
+      <div className="table-responsive">
+        <table className="table table-admin">
+          <thead className="thead-light">
+            <tr>
+              <th>Id Produk</th>
+              <th>Nama Produk</th>
+              <th>Deskripsi</th>
+              <th>Harga</th>
+              <th>Stok</th>
+              <th>Kategori</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {products.map((product) => (
+              <tr key={product.id_product}>
+                <td>{product.id_product}</td>
+                <td>{product.product_name}</td>
+                <td>{product.description}</td>
+                <td>{formatter.format(product.price)}</td>
+                <td>{product.stock}</td>
+                <td>{product.category_name}</td>
+                <td>
+                  <button
+                    className="btn btn-success btn-edit"
+                    onClick={() => openEditModal(product)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn btn-danger btn-delete"
+                    onClick={() => handleDeleteProduct(product.id_product)}
+                  >
+                    Hapus
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Edit Product Modal */}
+      {editModalOpen && selectedProduct && (
+        <div className="modal">
+          <div className="modal-content-admin">
+            <div className="modal-header">
+              <h5 className="modal-title">Edit Produk</h5>
+              <button type="button" className="close" onClick={closeEditModal}>
+                <span>&times;</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="row">
+                <div className="col-lg-7">
+                  {error && <div className="alert alert-danger">{error}</div>}
+                  <form>
+                    <div className="form-group">
+                      <label>Nama:</label>
+                      <input
+                        type="text"
+                        name="product_name"
+                        value={selectedProduct.product_name}
+                        onChange={handleInputChange}
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Deskripsi:</label>
+                      <textarea
+                        name="description"
+                        value={selectedProduct.description}
+                        onChange={handleInputChange}
+                        className="form-control"
+                        rows="5"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Harga:</label>
+                      <input
+                        type="number"
+                        name="price"
+                        value={selectedProduct.price}
+                        onChange={handleInputChange}
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Stok:</label>
+                      <input
+                        type="number"
+                        name="stock"
+                        value={selectedProduct.stock}
+                        onChange={handleInputChange}
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Kategori:</label>
+                      <select
+                        name="id_category"
+                        value={selectedProduct.id_category}
+                        onChange={handleInputChange}
+                        className="form-control"
+                      >
+                        <option value="">Pilih Kategori</option>
+                        {categories.map((category) => (
+                          <option
+                            key={category.id_category}
+                            value={category.id_category}
+                          >
+                            {category.category_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Foto Produk:</label>
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        className="form-control-file"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-edit-admin"
+                      onClick={handleSubmitEdit}
+                    >
+                      Simpan
                     </button>
-                  </>
-                ) : (
-                  <>
-                    <button className="edit-btn" onClick={() => handleEditProduct(product.id)}>
-                      Edit
+                  </form>
+                </div>
+                <div className="col-lg-5">
+                  {file ? (
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt="Preview"
+                      className="img-fluid"
+                    />
+                  ) : (
+                    <img
+                      src={`http://localhost:4000${selectedProduct.image}`}
+                      alt="Default Preview"
+                      className="img-fluid"
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Product Modal */}
+      {createModalOpen && (
+        <div className="modal">
+          <div className="modal-content-admin">
+            <div className="modal-header">
+              <h5 className="modal-title">Tambah Produk</h5>
+              <button
+                type="button"
+                className="close"
+                onClick={closeCreateModal}
+              >
+                <span>&times;</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="row">
+                <div className={!file ? "col-12" : "col-lg-7"}>
+                  {error && <div className="alert alert-danger">{error}</div>}
+                  <form>
+                    <div className="form-group">
+                      <label>Nama:</label>
+                      <input
+                        type="text"
+                        name="product_name"
+                        value={newProduct.product_name}
+                        onChange={handleInputChange}
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Deskripsi:</label>
+                      <textarea
+                        name="description"
+                        value={newProduct.description}
+                        onChange={handleInputChange}
+                        className="form-control"
+                        rows="5"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Harga:</label>
+                      <input
+                        type="number"
+                        name="price"
+                        value={newProduct.price}
+                        onChange={handleInputChange}
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Stok:</label>
+                      <input
+                        type="number"
+                        name="stock"
+                        value={newProduct.stock}
+                        onChange={handleInputChange}
+                        className="form-control"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Kategori:</label>
+                      <select
+                        name="id_category"
+                        value={newProduct.id_category}
+                        onChange={handleInputChange}
+                        className="form-control"
+                      >
+                        <option value="" disabled>
+                          Pilih Kategori
+                        </option>
+                        {categories.map((category) => (
+                          <option
+                            key={category.id_category}
+                            value={category.id_category}
+                          >
+                            {category.category_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Foto Produk:</label>
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        className="form-control-file"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-edit-admin"
+                      onClick={handleSubmitCreate}
+                    >
+                      Tambah Produk
                     </button>
-                    <button className="delete-btn" onClick={() => handleDeleteProduct(product.id)}>
-                      Delete
-                    </button>
-                  </>
-                )}
-                {deleteProductId === product.id && (
-                  <div className="confirm-delete">
-                    <p>Are you sure you want to delete this product?</p>
-                    <button className="confirm-delete-btn">Confirm</button>
-                    <button className="cancel-delete-btn" onClick={cancelDelete}>
-                      Cancel
-                    </button>
+                  </form>
+                </div>
+                {file && (
+                  <div className="col-lg-5">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt="Preview"
+                      className="img-fluid"
+                    />
                   </div>
                 )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

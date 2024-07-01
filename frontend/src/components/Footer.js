@@ -19,7 +19,7 @@ const Footer = () => {
           <div className="container">
             <div className="row">
               <div className="col-12 col-lg-5 mb-4">
-                <a className="navbar-brand" href="#">
+                <a className="navbar-brand">
                   <img
                     src={logo}
                     alt="Mebelin Furniture Logo"

@@ -1,140 +1,73 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import "../../css/Admin-css/usermanagement.css";
+import "../../css/AdminManagement.css";
+
+import { fetchAllUsers, changeRole } from "./HandleAPI_Admin";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editedUser, setEditedUser] = useState({
-    id: "",
-    name: { firstname: "", lastname: "" },
-    email: "",
-    password: "",
-  });
 
   useEffect(() => {
-    axios
-      .get("https://fakestoreapi.com/users")
-      .then((response) => setUsers(response.data))
-      .catch((error) => console.error("Error fetching users:", error));
+    const fetchData = async () => {
+      try {
+        const allUsersData = await fetchAllUsers();
+        setUsers(allUsersData);
+      } catch (error) {
+        console.error("Error fetching data product & category", error);
+      }
+    };
+    fetchData();
   }, []);
 
-  const openModal = (user) => {
-    setEditedUser({ ...user, password: "" }); // Initialize password to an empty string
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "firstname" || name === "lastname") {
-      setEditedUser((prevUser) => ({
-        ...prevUser,
-        name: {
-          ...prevUser.name,
-          [name]: value,
-        },
-      }));
-    } else {
-      setEditedUser((prevUser) => ({
-        ...prevUser,
-        [name]: value,
-      }));
+  const handleRoleChange = async (userId, newRole) => {
+    try {
+      const changeRoles = await changeRole(userId, newRole);
+      if (changeRoles.payload) {
+        const allUsersData = await fetchAllUsers();
+        setUsers(allUsersData);
+      }
+    } catch (error) {
+      console.error("Error updating user role:", error);
     }
   };
 
-  const handleSave = () => {
-    const updatedUsers = users.map((user) =>
-      user.id === editedUser.id ? editedUser : user
-    );
-    setUsers(updatedUsers);
-    closeModal();
-  };
-
-  const handleDelete = (userId) => {
-    const updatedUsers = users.filter((user) => user.id !== userId);
-    setUsers(updatedUsers);
-  };
-
   return (
-    <div className="user-management">
+    <div className="container-fluid container-admin">
       <h2>Manage Users</h2>
-      <table className="user-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.id}</td>
-              <td>{`${user.name.firstname} ${user.name.lastname}`}</td>
-              <td>{user.email}</td>
-              <td>
-                <button className="edit-btn" onClick={() => openModal(user)}>
-                  Edit
-                </button>
-                <button className="delete-btn" onClick={() => handleDelete(user.id)}>
-                  Delete
-                </button>
-              </td>
+      <div className="table-responsive">
+        <table className="table table-admin">
+          <thead className="thead-light">
+            <tr>
+              <th>Id User</th>
+              <th>Nama</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Edit Role</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {isModalOpen && (
-        <div className="modal">
-          <div className="modal-content">
-            <h3>Edit User</h3>
-            <label>
-              First Name:
-              <input
-                type="text"
-                name="firstname"
-                value={editedUser.name.firstname}
-                onChange={handleInputChange}
-              />
-            </label>
-            <label>
-              Last Name:
-              <input
-                type="text"
-                name="lastname"
-                value={editedUser.name.lastname}
-                onChange={handleInputChange}
-              />
-            </label>
-            <label>
-              Email:
-              <input
-                type="email"
-                name="email"
-                value={editedUser.email}
-                onChange={handleInputChange}
-              />
-            </label>
-            <label>
-              Password:
-              <input
-                type="password"
-                name="password"
-                value={editedUser.password}
-                onChange={handleInputChange}
-              />
-            </label>
-            <button onClick={handleSave}>Save</button>
-            <button onClick={closeModal}>Cancel</button>
-          </div>
-        </div>
-      )}
+          </thead>
+          <tbody>
+            {users.map((user) => (
+              <tr key={user.id_user}>
+                <td>{user.id_user}</td>
+                <td>{user.username}</td>
+                <td>{user.email}</td>
+                <td>{user.role}</td>
+                <td>
+                  <select
+                    className="form-select"
+                    value={user.role}
+                    onChange={(e) =>
+                      handleRoleChange(user.id_user, e.target.value)
+                    }
+                  >
+                    <option value="admin">Admin</option>
+                    <option value="user">User</option>
+                  </select>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
