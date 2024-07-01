@@ -18,7 +18,7 @@ const getProfile = async (req, res) => {
 
   try {
     const [results] = await db.execute(
-      "SELECT id_user, username, email, password, image, no_hp FROM tbl_users WHERE id_user = ?",
+      "SELECT id_user, username, email, password, image, no_hp, alamat, role FROM tbl_users WHERE id_user = ?",
       [id_user]
     );
 

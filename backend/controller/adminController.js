@@ -16,7 +16,7 @@ const upload = multer({ storage: storage });
 
 // Get all users (Admin only)
 const getAllUsers = async (req, res) => {
-  const sql = "SELECT id_user, username, role FROM tbl_users";
+  const sql = "SELECT id_user, username, email, role FROM tbl_users";
   try {
     const [rows] = await db.query(sql);
     res.json({
@@ -85,7 +85,7 @@ const updateUserRole = async (req, res) => {
 // Get all products
 const getAllProducts = async (req, res) => {
   const sql =
-    "SELECT id_product, product_name, description, price, stock, photos FROM tbl_products";
+    "SELECT id_product, product_name, description, price, stock, image FROM tbl_products";
   try {
     const [rows] = await db.query(sql);
     res.json({
@@ -165,7 +165,7 @@ const createProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   const { id_product, product_name, description, price, stock, id_category } =
     req.body;
-  let image = req.file.originalname;
+  // let image = req.file.originalname;
 
   try {
     // Validasi data input
@@ -199,6 +199,7 @@ const updateProduct = async (req, res) => {
     if (!req.file) {
       image = fetchResult[0].image;
     } else {
+      image = `/image/${req.file.filename}`;
       // Hapus gambar lama jika ada
       const oldImagePath = path.join(__dirname, "..", fetchResult[0].image);
       if (fs.existsSync(oldImagePath)) {
@@ -265,7 +266,8 @@ const deleteProduct = async (req, res) => {
 
 // Get All category
 const getAllCategories = async (req, res) => {
-  const sql = "SELECT id_category, category_name FROM tbl_categorys";
+  const sql =
+    "SELECT id_category, category_name, categorys, image FROM tbl_categorys";
   try {
     const [rows] = await db.query(sql);
     res.json({
@@ -334,7 +336,7 @@ const createCategory = async (req, res) => {
 // Update category
 const updateCategory = async (req, res) => {
   const { id_category, category_name, categorys } = req.body;
-  let image = req.file.originalname;
+  // let image = req.file.originalname;
 
   try {
     // Validasi data input
@@ -369,6 +371,7 @@ const updateCategory = async (req, res) => {
       image = fetchResult[0].image;
     } else {
       // Hapus gambar lama jika ada
+      image = `/image/${req.file.filename}`;
       const oldImagePath = path.join(
         __dirname,
         "..",
@@ -379,7 +382,6 @@ const updateCategory = async (req, res) => {
         fs.unlinkSync(oldImagePath);
       }
     }
-
     // Query untuk melakukan update
     const updateSql =
       "UPDATE tbl_categorys SET category_name = ?, categorys = ?, image = ? WHERE id_category = ?";
